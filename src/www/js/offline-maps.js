@@ -31,11 +31,8 @@ DAMAGE.
 
 "use strict";
 
-define(['map', 'plugins/offline-maps/js/cache'], function(map, cache){
+define(['map', 'utils', './cache'], function(map, utils, cache){
     var SAVED_MAPS = 'saved-maps-v2';
-
-    // $(document).on('pageshow', '#saved-maps-page',  offlineMapsPage);
-    // $(document).on('pageshow', '#save-map', saveMapPage);
 
     // create layer on map for showing saved map extent
     var savedMapsLayer = map.addLayer({
@@ -73,7 +70,7 @@ define(['map', 'plugins/offline-maps/js/cache'], function(map, cache){
      */
     var getSavedMapDetails = function(name){
         var mapDetails = undefined;
-        var maps = this.getSavedMaps();
+        var maps = getSavedMaps();
 
         if(maps){
             mapDetails = maps[name];
@@ -86,6 +83,7 @@ define(['map', 'plugins/offline-maps/js/cache'], function(map, cache){
      * Show saved maps screen.
      */
     var offlineMapsPage = function(){
+        console.log("=>");
         var maps = getSavedMaps();
         var selectedSavedMap;
         var count = 0;
@@ -204,6 +202,8 @@ define(['map', 'plugins/offline-maps/js/cache'], function(map, cache){
         // show first map on list
         selectedSavedMap = $('#saved-maps-list li:first');
         displayOnMap();
+
+        map.display('saved-maps-map');
     };
 
     /**
@@ -256,8 +256,8 @@ define(['map', 'plugins/offline-maps/js/cache'], function(map, cache){
             }, 1000);
         }
 
-        this.map.updateSize();
-
+        //this.map.updateSize();
+        this.map.render('saved-maps-map');
     };
 
     /**
@@ -287,4 +287,9 @@ define(['map', 'plugins/offline-maps/js/cache'], function(map, cache){
     var showSavedMap = function(details){
         map.showBBox(savedMapsLayer, details.bounds, details.poi);
     };
+
+    $(document).on('pageshow', '#saved-maps-page',  offlineMapsPage);
+    $(document).on('pageshow', '#save-map-page', saveMapPage);
+
+    //map.render
 });

@@ -1,6 +1,26 @@
-<div id="saved-maps" class="map-page" data-role="page" data-theme="a">
+<div id="saved-maps-page" class="map-page" data-role="page" data-theme="a">
 
   {{header}}
+
+  <div data-role="content">
+    <div class="non-map-body-white ui-overlay-shadow">
+      <h2></h2>
+      <div id="saved-maps-list" class="non-map-content">
+        <ul id="saved-maps-list-list" data-role="listview" data-split-icon="delete">
+        </ul>
+      </div>
+
+      <div id="saved-maps-map"></div>
+    </div>
+
+    <div class="map-zoom-buttons">
+      <a data-role="button" class="map-zoom-button-in">+</a>
+      <a data-role="button" class="map-zoom-button-out">-</a>
+    </div>
+
+  </div>
+
+  {{popups}}
 
   {{footer}}
 
