@@ -212,6 +212,16 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
     var saveMapPage = function(){
         console.log("crivvens");
 
+        // $('#cache-slider').bind(
+        //     'change',
+        //     cache.previewImagesChange);
+        // $('#cache-save-slider .ui-slider-handle').bind(
+        //     'vmousedown',
+        //     cache.previewImagesMouseDown);
+        // $('#cache-save-slider .ui-slider-handle').bind(
+        //     'vmouseup',
+        //     cache.previewImagesMouseUp);
+
         map.removeAllFeatures(savedMapsLayer);
 
         $('#cache-controls').hide();

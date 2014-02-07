@@ -157,6 +157,22 @@ return{
     },
 
     /**
+     * Preview cache map slider change.
+     */
+    // previewImagesChange = function(){
+    //     // only redraw if slider value has changed
+    //     if(this.mouseDown && this.lastPreviewed !== $('#cache-slider').val()){
+    //         this.previewImages();
+    //         this.lastPreviewed = $('#cache-slider').val();
+    //     }
+
+    //     // always update number of zoom levels
+    //     $('#cache-save-details-zoom-level-but').val(
+    //         $('#cache-slider').val() - this.map.getZoomLevels().current + 1);
+    //     this.setSaveStats(this.map.getZoomLevels().current, $('#cache-slider').val());
+    // },
+
+    /**
      * Update cache page stats.
      * @param min minimum zoom level
      * @param max maximum zoom level
