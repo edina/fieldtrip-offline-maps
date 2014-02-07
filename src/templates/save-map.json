@@ -1,3 +1,8 @@
 {
-
+    "body": {
+        "download-map": "Download Map",
+        "save-map": "Save Map (use offline)",
+        "save": "Save",
+        "zoom": "Zoom Levels"
+    }
 }

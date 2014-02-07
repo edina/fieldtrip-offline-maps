@@ -32,9 +32,12 @@ DAMAGE.
 "use strict";
 
 define(['map', 'utils'], function(map, utils){
+    var AV_TILE_SIZE = 16384; // in bytes 16 KB
+    var SAVED_MAPS = 'saved-maps-v2';
     var MAX_CACHE = 52428800; // per download - 50 MB
 
     var maxDownloadStr = utils.bytesToSize(MAX_CACHE);
+    var previews = {};
 
     /**
      * Convert easting to TMS tile number.
@@ -66,6 +69,94 @@ define(['map', 'utils'], function(map, utils){
         }
 
         return tn;
+    };
+
+    /**
+     * Display preview of cached images.
+     */
+    var previewImages = function(){
+        if(!$('#cache-slider').slider("option", "disabled")){
+            var current = parseInt($("#cache-save-slider input").val());
+            var next = current + 1;
+            var previous = current - 1;
+
+            $('#cache-preview').show();
+
+            // TODO - needs to remove openlayers specific stuff
+            var showMapPreview = function(options){
+                var pMap;
+                    console.log(previews);
+                if(typeof(previews[options.name]) === 'undefined'){
+                    console.log("===> " + options.name);
+                    pMap = new OpenLayers.Map(
+                        options.div,
+                        map.getOptions()
+                    );
+
+                    var baseLaser = map.getBaseLayer();
+                    var layer = new OpenLayers.Layer.TMS(
+                        "os",
+                        baseLaser.url,
+                        {
+                            layername: baseLaser.layername,
+                            type: baseLaser.type
+                        }
+                    );
+
+                    pMap.addLayer(layer);
+                    previews[options.name] = pMap;
+                }
+                else{
+                    pMap = previews[options.name];
+                }
+
+                pMap.zoomTo(options.zoom);
+                pMap.setCenter(map.getCentre().centre);
+
+                return pMap;
+            };
+
+            // draw individual preview window
+            var drawPreview = function(divId, zoom){
+                $('#' + divId).show();
+
+                var map = showMapPreview({
+                    name: divId,
+                    div: divId,
+                    zoom: zoom,
+                });
+
+                console.log('#' + divId);
+                console.log($('#' + divId + '.olMap').length);
+                if($('#' + divId + '.olMap').length === 0){
+                    map.render(divId);
+                }
+            };
+
+            var zooms = map.getZoomLevels();
+            var zoom = parseInt($('#cache-slider').val());
+            if(previous >= 0 && previous >= zooms.current){
+                // draw left panel
+                drawPreview('cache-preview-left', zoom - 1);
+            }
+            else{
+                $('#cache-preview-left').hide();
+            }
+
+            // draw centre panel
+            drawPreview('cache-preview-centre', zoom);
+
+            if(next <= zooms.max){
+                // draw right panel
+                drawPreview('cache-preview-right',  zoom + 1);
+            }
+            else{
+                $('#cache-preview-right').hide();
+            }
+
+            $('#save-map-map').css('opacity', '0.0');
+            $('.map-zoom-buttons').hide();
+        }
     };
 
     // !!!!!!!!!!!!! TODO need to do this for mercator !!!!!!!!!!!!!
@@ -100,13 +191,13 @@ define(['map', 'utils'], function(map, utils){
         return totalTileToDownload;
     };
 
-return{
+var _this = {
     /**
      * Remove saved map details from local storage.
      * @param name Saved map name.
      */
     deleteSavedMapDetails: function(mapName){
-        var maps = getSavedMaps();
+        var maps = this.getSavedMaps();
 
         var getLocalMapDir = function(cacheDir, name){
             // remove file:// from cachedir fullpath
@@ -157,20 +248,76 @@ return{
     },
 
     /**
+     * Get list of saved maps.
+     * @return Associative array of stored maps.
+     */
+    getSavedMaps: function(){
+        var maps;
+        var obj = localStorage.getItem(SAVED_MAPS)
+
+        if(obj){
+            try{
+                maps = JSON.parse(obj);
+            }
+            catch(ReferenceError){
+                console.error('Problem with:');
+                console.error(SAVED_MAPS);
+                localStorage.removeItem(SAVED_MAPS);
+            }
+        }
+
+        return maps;
+    },
+
+    /**
+     * @return Current number of saved maps.
+     */
+    getSavedMapsCount: function(){
+        var count = 0;
+
+        for(var i in this.getSavedMaps()){
+            ++count;
+        }
+
+        return count;
+    },
+
+    /**
      * Preview cache map slider change.
      */
-    // previewImagesChange = function(){
-    //     // only redraw if slider value has changed
-    //     if(this.mouseDown && this.lastPreviewed !== $('#cache-slider').val()){
-    //         this.previewImages();
-    //         this.lastPreviewed = $('#cache-slider').val();
-    //     }
+    previewImagesChange: function(){
+        // only redraw if slider value has changed
+        if(this.mouseDown && this.lastPreviewed !== $('#cache-slider').val()){
+            previewImages();
+            this.lastPreviewed = $('#cache-slider').val();
+        }
 
-    //     // always update number of zoom levels
-    //     $('#cache-save-details-zoom-level-but').val(
-    //         $('#cache-slider').val() - this.map.getZoomLevels().current + 1);
-    //     this.setSaveStats(this.map.getZoomLevels().current, $('#cache-slider').val());
-    // },
+        // always update number of zoom levels
+        $('#cache-save-details-zoom-level-but').val(
+            $('#cache-slider').val() - map.getZoomLevels().current + 1);
+        this.setSaveStats(map.getZoomLevels().current, $('#cache-slider').val());
+    },
+
+    /**
+     * Preview cache map mouse down.
+     */
+    previewImagesMouseDown: function(){
+        this.mouseDown = true;
+        previewImages();
+        this.lastPreviewed = $('#cache-slider').val();
+    },
+
+    /**
+     * Preview cache map mouse up.
+     */
+    previewImagesMouseUp: function(){
+        this.mouseDown = false;
+        $('#cache-preview').hide();
+        $('#save-map-map').css('opacity', '1');
+        $('.map-zoom-buttons').show();
+        map.getBaseLayer().redraw();
+    },
+
 
     /**
      * Update cache page stats.
@@ -179,15 +326,15 @@ return{
      */
     setSaveStats: function(min, max){
         var count = totalNumberOfTilesToDownload(min, max);
-        var downloadSize = count * Cache.AV_TILE_SIZE;
+        var downloadSize = count * AV_TILE_SIZE;
 
         $('#cache-save-details-text-stats').html(
             'Download Size: ' +
-                Utils.bytesToSize(downloadSize) +
-                ' (max ' + this.maxDownloadStr + ')');
+                utils.bytesToSize(downloadSize) +
+                ' (max ' + maxDownloadStr + ')');
 
         // disable download button if download is too big
-        if(downloadSize > Cache.MAX_CACHE){
+        if(downloadSize > MAX_CACHE){
             $('#cache-save-details-button-div a').addClass('ui-disabled');
         }
         else{
@@ -196,5 +343,7 @@ return{
     },
 
 }
+
+return _this;
 
 });

@@ -32,7 +32,7 @@ DAMAGE.
 "use strict";
 
 define(['map', 'utils', './cache'], function(map, utils, cache){
-    var SAVED_MAPS = 'saved-maps-v2';
+    var MAX_NO_OF_SAVED_MAPS = 3;
 
     // create layer on map for showing saved map extent
     var savedMapsLayer = map.addLayer({
@@ -42,48 +42,9 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
     });
 
     /**
-     * Get list of saved maps.
-     * @return Associative array of stored maps.
-     */
-    var getSavedMaps = function(){
-        var maps;
-        var obj = localStorage.getItem(SAVED_MAPS)
-
-        if(obj){
-            try{
-                maps = JSON.parse(obj);
-            }
-            catch(ReferenceError){
-                console.error('Problem with:');
-                console.error(SAVED_MAPS);
-                localStorage.removeItem(SAVED_MAPS);
-            }
-        }
-
-        return maps;
-    };
-
-    /**
-     * Get saved map details.
-     * @param name The name of the saved map.
-     * @return Saved map details object.
-     */
-    var getSavedMapDetails = function(name){
-        var mapDetails = undefined;
-        var maps = getSavedMaps();
-
-        if(maps){
-            mapDetails = maps[name];
-        }
-
-        return mapDetails;
-    };
-
-    /**
      * Show saved maps screen.
      */
     var offlineMapsPage = function(){
-        console.log("=>");
         var maps = getSavedMaps();
         var selectedSavedMap;
         var count = 0;
@@ -110,14 +71,14 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         if(count === 0){
             $('#saved-maps-list').html('<p class="large-text">No saved maps - go to <a href="save-map.html">Download</a> to create saved maps</p>');
         }
-        else if(count < Cache.MAX_NO_OF_SAVED_MAPS){
+        else if(count < MAX_NO_OF_SAVED_MAPS){
             $('#saved-maps-list').append('<p class="large-text"><a href="save-map.html">Download more maps</a></p>');
         }
 
         // display a saved map on main map
         var displayOnMap = $.proxy(function(){
             var name = selectedSavedMap.find('h3').text();
-            var details = getSavedMapDetails(name);
+            var details = cache.getSavedMapDetails(name);
 
             if(details){
                 map.showSavedMap(details);
@@ -210,17 +171,15 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
      * TODO
      */
     var saveMapPage = function(){
-        console.log("crivvens");
-
-        // $('#cache-slider').bind(
-        //     'change',
-        //     cache.previewImagesChange);
-        // $('#cache-save-slider .ui-slider-handle').bind(
-        //     'vmousedown',
-        //     cache.previewImagesMouseDown);
-        // $('#cache-save-slider .ui-slider-handle').bind(
-        //     'vmouseup',
-        //     cache.previewImagesMouseUp);
+        $('#cache-slider').bind(
+            'change',
+            $.proxy(cache.previewImagesChange, cache));
+        $('#cache-save-slider .ui-slider-handle').bind(
+            'vmousedown',
+            $.proxy(cache.previewImagesMouseDown, cache));
+        $('#cache-save-slider .ui-slider-handle').bind(
+            'vmouseup',
+            $.proxy(cache.previewImagesMouseUp, cache));
 
         map.removeAllFeatures(savedMapsLayer);
 
@@ -246,28 +205,27 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         });
 
         // initialise slider values according to zoom level
-        this.setSliderValues();
+        setSliderValues();
 
-        this.map.registerZoom(this, function(){
-            this.setSliderValues();
+        map.registerZoom(this, function(){
+            setSliderValues();
         });
 
         $('#cache-save-details-zoom-level-but').val('1');
 
-
-        if(this.cache.getSavedMapsCount() < Cache.MAX_NO_OF_SAVED_MAPS){
+        if(cache.getSavedMapsCount() < MAX_NO_OF_SAVED_MAPS){
             $('#save-map-buttons-ok').removeClass('ui-disabled');
         }
         else{
             $('#save-map-buttons-ok').addClass('ui-disabled');
 
             setTimeout(function(){
-                Utils.inform('You have reached the maximum number of saved maps.');
+                utils.inform('You have reached the maximum number of saved maps.');
             }, 1000);
         }
 
         //this.map.updateSize();
-        this.map.render('saved-maps-map');
+        map.display('save-map-map');
     };
 
     /**
@@ -300,6 +258,4 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
 
     $(document).on('pageshow', '#saved-maps-page',  offlineMapsPage);
     $(document).on('pageshow', '#save-map-page', saveMapPage);
-
-    //map.render
 });

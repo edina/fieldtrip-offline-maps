@@ -1,6 +1,62 @@
-<div id="save-map" class="map-page" data-role="page" data-theme="a">
+<div id="save-map-page" class="map-page" data-role="page" data-theme="a">
 
   {{header}}
+
+  <div data-role="content">
+    <div id="save-map-map"></div>
+
+    <div class="map-zoom-buttons">
+      <a data-role="button" class="map-zoom-button-in">+</a>
+      <a data-role="button" class="map-zoom-button-out">-</a>
+    </div>
+
+    <div id="cache-preview" style="display: none;">
+      <div id="cache-preview-title">
+        <div id="cache-preview-left-title"></div>
+        <div id="cache-preview-centre-title"></div>
+        <div id="cache-preview-right-title"></div>
+      </div>
+
+      <div id="cache-preview-left"></div>
+      <div id="cache-preview-right"></div>
+      <div id="cache-preview-centre"></div>
+    </div>
+
+    <div id="save-map-buttons" class="ui-grid-b">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div id="save-map-buttons-ok" class="ui-block-c">
+        <a data-role="button">{{body["download-map"]}}</a>
+      </div>
+    </div>
+
+    <div id="cache-controls" style="display: none;">
+      <div class="ui-grid-a">
+      <div id="cache-save-details-title" class="ui-block-a">
+        <h2>{{body["save-map"]}}</h2>
+      </div>
+      <div id="cache-save-details-button-div" class="ui-block-b">
+        <a data-role="button"
+           href="save-map-name.html">Save</a>
+      </div>
+      <div id="cache-save-details-text" class="ui-block-a">
+        <label for="basic">{{body["zoom"]}}</label>
+        <input type="text" id="cache-save-details-zoom-level-but" value="1"  />
+      </div>
+      <div id="cache-save-details-text-stats" class="ui-block-b"></div>
+      </div>
+
+      <div id="cache-save-slider" class="ui-grid-solo">
+        <input type="range"
+               name="slider"
+               id="cache-slider"
+               value="8"
+               min="0"
+               max="16"
+               data-highlight="true" />
+      </div>
+    </div>
+  </div>
 
   {{footer}}
 
