@@ -45,7 +45,7 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
      * Show saved maps screen.
      */
     var offlineMapsPage = function(){
-        var maps = getSavedMaps();
+        var maps = cache.getSavedMaps();
         var selectedSavedMap;
         var count = 0;
 
@@ -81,7 +81,7 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
             var details = cache.getSavedMapDetails(name);
 
             if(details){
-                map.showSavedMap(details);
+                map.showBBox(savedMapsLayer, details.bounds, details.poi);
             }
         }, this);
 
@@ -168,6 +168,41 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
     };
 
     /**
+     * Save Map Name dialog.
+     */
+    var saveMapNamePage = function(){
+        var dlSize = cache.totalNumberOfTilesToDownload(
+            map.getZoomLevels().current,
+            $('#saved-map-name-dialog-save-to').val()) * cache.AV_TILE_SIZE;
+
+        var saveMap = false;
+
+        $('#save-map-name-dialog-info').html(
+            '<p>' + $('#cache-save-details-text-stats').text() + '</p>');
+
+        $('#saved-map-name-dialog-text').val(new Date().toLocaleString().substr(0, 24));
+        $('#saved-map-name-dialog-save-to').val($("#cache-slider").val());
+        $('#saved-map-name-dialog-btn').click($.proxy(function(){
+            $('.ui-dialog').dialog('close');
+            saveMap = true;
+        }, this));
+
+        // use pageremove on save map name screen otherwise attaching the
+        // showPageLoadingMsg to the page is problematic
+        $('#save-map-name-dialog').on(
+            'pageremove',
+            function(){
+                if(saveMap){
+                    if(cache.saveMap($('#saved-map-name-dialog-text').val(),
+                                     map.getZoomLevels().current,
+                                     $('#saved-map-name-dialog-save-to').val())){
+                    }
+                }
+            }
+        );
+    };
+
+    /**
      * TODO
      */
     var saveMapPage = function(){
@@ -224,7 +259,7 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
             }, 1000);
         }
 
-        //this.map.updateSize();
+        map.updateSize();
         map.display('save-map-map');
     };
 
@@ -258,4 +293,8 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
 
     $(document).on('pageshow', '#saved-maps-page',  offlineMapsPage);
     $(document).on('pageshow', '#save-map-page', saveMapPage);
+    $(document).on('pageshow', '#save-map-name-dialog', saveMapNamePage);
+
+    // adding stylesheet to beginning of head
+    $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 });

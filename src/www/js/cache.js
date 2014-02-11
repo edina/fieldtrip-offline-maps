@@ -32,12 +32,38 @@ DAMAGE.
 "use strict";
 
 define(['map', 'utils'], function(map, utils){
-    var AV_TILE_SIZE = 16384; // in bytes 16 KB
     var SAVED_MAPS = 'saved-maps-v2';
     var MAX_CACHE = 52428800; // per download - 50 MB
 
     var maxDownloadStr = utils.bytesToSize(MAX_CACHE);
     var previews = {};
+
+    var imagesToDownloadQueue;
+
+    /**
+     * Single image download is complete.
+     * @param url Remote Image URL.
+     * @param value Local Image.
+     */
+    var downloadComplete = function(url, tileData, x, y, z, mapName){
+        ++this.count;
+
+        var percent = ((this.count / this.noOfTiles) * 100).toFixed(0);
+
+        //$.mobile.loading( 'show', { text: percent  + '%'});
+        utils.inform(percent  + '%');
+        if(this.count === this.noOfTiles){
+            $.mobile.hidePageLoadingMsg();
+        }
+
+        var callback = function(){   //get the next image
+            saveImageSynchronous(mapName);
+        }
+
+        if(url){
+            webdb.insertCachedTilePath(x, y, z, tileData, mapName, callback);
+        }
+    };
 
     /**
      * Convert easting to TMS tile number.
@@ -159,39 +185,51 @@ define(['map', 'utils'], function(map, utils){
         }
     };
 
-    // !!!!!!!!!!!!! TODO need to do this for mercator !!!!!!!!!!!!!
-
     /**
-     * Count number of tile to cache.
-     * @param min Start zoom level.
-     * @param max End zoom level.
+     * Save images synchronously
      */
-    var totalNumberOfTilesToDownload = function(min, max){
-        var totalTileToDownload = 0;
-
-        var bounds = map.getExtent();
-        if(bounds !== null){
-            for (var zoom = min; zoom <= max; zoom++){
-                var txMin = easting2tile(bounds.left, zoom);
-                var txMax = easting2tile(bounds.right, zoom);
-
-                var tyMin = northing2tile(bounds.bottom, zoom);
-                var tyMax = northing2tile(bounds.top, zoom);
-
-                var ntx = txMax - txMin + 1;
-                var nty = tyMax - tyMin + 1;
-
-                totalTileToDownload += Math.abs((ntx * nty));
+    var saveImageSynchronous = function(mapName){
+        if(imagesToDownloadQueue.length !== 0){
+            var imageInfo = imagesToDownloadQueue.pop();
+            if(imageInfo){
+                this.saveImage(imageInfo.url,
+                               imageInfo.zoom,
+                               imageInfo.tx,
+                               imageInfo.ty,
+                               imageInfo.type,
+                               mapName);
             }
         }
-        else{
-            console.warn("Map has no bounds, can't calculate download size");
+
+    };
+
+    /**
+     * Save current saved maps to localstorage.
+     * @param maps Dictionary of maps.
+     */
+    var setSavedMap = function(maps){
+        localStorage.setItem(SAVED_MAPS, JSON.stringify(maps));
+    };
+
+    /**
+     * Save the associated details of a saved map.
+     * @param name Map name.
+     * @param details The associated details.
+     */
+    var setSavedMapDetails = function(name, details){
+        var maps = _this.getSavedMaps();
+        if(!maps){
+            maps = {};
         }
 
-        return totalTileToDownload;
+        maps[name] = details;
+
+        setSavedMap(maps);
     };
 
 var _this = {
+    AV_TILE_SIZE: 16384, // in bytes 16 KB
+
     /**
      * Remove saved map details from local storage.
      * @param name Saved map name.
@@ -245,6 +283,21 @@ var _this = {
             delete maps[mapName];
             this.setSavedMap(maps);
         }
+    },
+
+    /**
+     * Get saved map details.
+     * @param name The name of the saved map.
+     * @return Saved map details object.
+     */
+    getSavedMapDetails: function(name){
+        var mapDetails = undefined;
+        var maps = this.getSavedMaps();
+        if(maps){
+            mapDetails = maps[name];
+        }
+
+        return mapDetails;
     },
 
     /**
@@ -318,6 +371,130 @@ var _this = {
         map.getBaseLayer().redraw();
     },
 
+    /**
+     * Save image to sd card.
+     * @param url External Tile URL.
+     * @param zoom Map zoom level.
+     * @param tx Tile xcoord.
+     * @param ty Tile ycoord.
+     * @param type Image file type.
+     */
+    saveImage: function(url, zoom, tx, ty, type, mapName){
+        var maxNumberOfFilesPerDir = 100;
+        var fileName = map.getStackType() + '_' + zoom + '_' + tx + '_' +  ty + '.' + type;
+
+        var subDirectory = Math.ceil(this.count / maxNumberOfFilesPerDir);
+
+        var getLocalFileName = function(cacheDir, fileName){
+            // remove file:// from cachedir fullpath
+
+            var path = cacheDir.fullPath;
+            if(path.slice(0,7) === "file://"){
+                path = path.substr(7);
+            }
+
+            return path + "/" + mapName + "/" + subDirectory + "/" + fileName;
+        };
+
+        console.debug("download " + url);
+        // no file, download it
+        var fileTransfer = new FileTransfer();
+        fileTransfer.download(
+            url + utils.getLoggingParams(true),
+            getLocalFileName(this.cacheDir, fileName),
+            $.proxy(function(entry) {
+                downloadComplete(url, getLocalFileName(this.cacheDir, fileName), tx, ty, zoom, mapName);
+            }, this),
+            $.proxy(function(error) {
+                console.error("download error source " + error.source);
+                console.error("download error target " + error.target);
+
+                // error code 3? - check whitelist
+                console.error("download error code: " + error.code);
+                downloadComplete();
+            }, this)
+        );
+    },
+
+    /**
+     * Cache tile images.
+     * @param name Saved map name.
+     * @param min Start zoom level to cache.
+     * @param max End zoom level to cache.
+     */
+    saveMap: function(mapName, min, max){
+        mapName = utils.santiseForFilename(mapName);
+        var success = true;
+        var dlSize = this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE;
+
+        if(dlSize > MAX_CACHE){
+            alert('Download size too large');
+            success = false;
+        }
+        else{
+            var details = this.getSavedMapDetails(mapName);
+
+            if(details === undefined){
+                this.count = 0;
+                var layer = map.getBaseLayer();
+
+                //this.noOfTiles = dlSize / AV_TILE_SIZE;
+
+                //$.mobile.loading( 'show', { text: "Saving ..." });
+                utils.inform("Saving ...");
+
+                // store cached map details
+                var details = {
+                    'poi': map.getCentre(),
+                    'bounds': map.getExtent(),
+                    'images': []
+                }
+
+                imagesToDownloadQueue = [];
+
+                var type = map.getTileFileType();
+
+                for(var zoom = min; zoom <= max; zoom++) {
+                    var bounds = map.getExtent();
+
+                    var txMin = this.easting2tile(bounds.left, zoom);
+                    var txMax = this.easting2tile(bounds.right, zoom);
+
+                    var tyMin = this.northing2tile(bounds.bottom, zoom);
+                    var tyMax = this.northing2tile(bounds.top, zoom);
+
+                    for (var tx = txMin; tx <= txMax; tx++) {
+                        for (var ty = tyMin; ty <= tyMax; ty++) {
+                            var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+
+                            var imageInfo = {
+                                url: url,
+                                zoom: zoom,
+                                tx:tx,
+                                ty:ty,
+                                type:type
+                            };
+
+                            imagesToDownloadQueue.push(imageInfo);
+                        }
+                    }
+                }
+
+                var downloadImageThreads = 8;
+                for(var i=0; i < downloadImageThreads; i++){
+                    saveImageSynchronous(mapName);
+                }
+
+                setSavedMapDetails(mapName, details);
+            }
+            else{
+                utils.inform(name + ' is already defined');
+                success = false;
+            }
+        }
+
+        return success;
+    },
 
     /**
      * Update cache page stats.
@@ -325,8 +502,8 @@ var _this = {
      * @param max maximum zoom level
      */
     setSaveStats: function(min, max){
-        var count = totalNumberOfTilesToDownload(min, max);
-        var downloadSize = count * AV_TILE_SIZE;
+        var count = this.totalNumberOfTilesToDownload(min, max);
+        var downloadSize = count * this.AV_TILE_SIZE;
 
         $('#cache-save-details-text-stats').html(
             'Download Size: ' +
@@ -342,6 +519,37 @@ var _this = {
         }
     },
 
+
+    // !!!!!!!!!!!!! TODO need to do this for mercator !!!!!!!!!!!!!
+    /**
+     * Count number of tile to cache.
+     * @param min Start zoom level.
+     * @param max End zoom level.
+     */
+    totalNumberOfTilesToDownload: function(min, max){
+        var totalTileToDownload = 0;
+
+        var bounds = map.getExtent();
+        if(bounds !== null){
+            for (var zoom = min; zoom <= max; zoom++){
+                var txMin = easting2tile(bounds.left, zoom);
+                var txMax = easting2tile(bounds.right, zoom);
+
+                var tyMin = northing2tile(bounds.bottom, zoom);
+                var tyMax = northing2tile(bounds.top, zoom);
+
+                var ntx = txMax - txMin + 1;
+                var nty = tyMax - tyMin + 1;
+
+                totalTileToDownload += Math.abs((ntx * nty));
+            }
+        }
+        else{
+            console.warn("Map has no bounds, can't calculate download size");
+        }
+
+        return totalTileToDownload;
+    },
 }
 
 return _this;
