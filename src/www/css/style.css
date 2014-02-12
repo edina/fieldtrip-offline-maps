@@ -12,6 +12,7 @@
 
 #saved-maps-list-list li{
     background: white;
+    padding: 0 0 0 20px;
 }
 
 #saved-maps-list-list .ui-block-a{
@@ -217,4 +218,26 @@
 
 #save-map-name-dialog h1{
     width: 80%;
+}
+
+#saved-maps-list-popup{
+    min-width: 12em;
+    font-size: 16px;
+}
+
+#saved-maps-list-popup [data-role="divider"]{
+    padding: 1em !important;
+}
+
+#saved-maps-list-popup.ui-popup{
+    padding: 0;
+}
+
+#saved-maps-list-popup li{
+    padding: 0;
+    margin: 0 0 !important;
+}
+
+#saved-maps-list-popup .ui-btn-text{
+    font-size: 16px;
 }

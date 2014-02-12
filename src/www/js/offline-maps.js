@@ -31,8 +31,63 @@ DAMAGE.
 
 "use strict";
 
-define(['map', 'utils', './cache'], function(map, utils, cache){
+define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
+
+    /**
+     * Map with local storage caching.
+     * @params options:
+     *     name           - map name
+     *     url            - TMS URL
+     *     layerName      - TMS layer name
+     *     type           - layer image type
+     *     serviceVersion - TMS service version
+     *     isBaseLayer    - is this the base layer?
+     */
+    var MapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
+        initialize: function(options) {
+            //this.storage = options.db;
+
+            this.serviceVersion = options.serviceVersion;
+            this.layername = options.layerName;
+            this.type = options.type;
+
+            // this boolean determines which overriden method is called getURLasync
+            // or getURL. Using getURLasync was causing the application to freeze,
+            // often getting a ANR
+            this.async = typeof(webdb) !== 'undefined';
+
+            this.isBaseLayer = options.isBaseLayer;
+            OpenLayers.Layer.TMS.prototype.initialize.apply(
+                this,
+                [options.name, options.url, {}]
+            );
+        },
+        getURLasync: function(bounds, callback, scope) {
+            var url = OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
+            var urlData = this.getUrlWithXYZ(bounds);
+            webdb.getCachedTilePath( callback, scope, urlData.x, urlData.y , urlData.z, urlData.url);
+        },
+        getUrlWithXYZ: function(bounds){
+            bounds = this.adjustBounds(bounds);
+            var res = this.map.getResolution();
+            var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tileSize.w));
+            var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tileSize.h));
+            var z = this.serverResolutions != null ?
+                OpenLayers.Util.indexOf(this.serverResolutions, res) :
+                this.map.getZoom() + this.zoomOffset;
+            var path = this.serviceVersion + "/" + this.layername + "/" + z + "/" + x + "/" + y + "." + this.type;
+            var url = this.url;
+            if (OpenLayers.Util.isArray(url)) {
+                url = this.selectUrl(path, url);
+            }
+            return { url: url + path, x:x, y:y, z:z};
+
+        },
+        getURL: function(bounds) {
+            return OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
+        },
+    });
 
     // create layer on map for showing saved map extent
     var savedMapsLayer = map.addLayer({
@@ -48,6 +103,8 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         var maps = cache.getSavedMaps();
         var selectedSavedMap;
         var count = 0;
+
+        ui.mapPage('saved-maps-map');
 
         if(maps){
             // build saved maps list
@@ -76,14 +133,17 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         }
 
         // display a saved map on main map
-        var displayOnMap = $.proxy(function(){
+        var displayOnMap = function(){
             var name = selectedSavedMap.find('h3').text();
             var details = cache.getSavedMapDetails(name);
-
             if(details){
-                map.showBBox(savedMapsLayer, details.bounds, details.poi);
+                map.showBBox({
+                    'layer': savedMapsLayer,
+                    'bounds': details.bounds,
+                    'poi': details.poi
+                });
             }
-        }, this);
+        };
 
         // context menu popup
         $('#saved-maps-list-popup').bind({
@@ -104,11 +164,11 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
             }, this)
         });
 
-        $('#saved-maps-list-popup-view').click($.proxy(function(event){
+        $('#saved-maps-list-popup-view').click(function(event){
             // view selected
             $.mobile.changePage('map.html');
             displayOnMap();
-        }, this));
+        });
         $('#saved-maps-list-popup-delete').click($.proxy(function(event){
             // delete selected
             selectedSavedMap.toBeDeleted = true;
@@ -132,7 +192,7 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         var taphold = false;
         $('.saved-map-click').on(
             'tap',
-            $.proxy(function(event){
+            function(event){
                 if(!taphold){
                     selectedSavedMap = $(event.target).parents('li');
                     displayOnMap();
@@ -144,16 +204,18 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
                     // prevent popup dialog closing
                     event.preventDefault();
                 }
-            }, this));
+            }
+        );
 
         // press and hold on a saved map
         $('.saved-map-click').on(
             'taphold',
-            $.proxy(function(event){
+            function(event){
                 selectedSavedMap = $(event.target).parents('li');
                 $('#saved-maps-list-popup').popup('open', {positionTo: 'origin'});
                 taphold = true;
-            }, this));
+            }
+        );
 
         // make map list scrollable on touch screens
         utils.touchScroll('#saved-maps-list');
@@ -164,7 +226,7 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         selectedSavedMap = $('#saved-maps-list li:first');
         displayOnMap();
 
-        map.display('saved-maps-map');
+        savedMapsLayer.setVisibility(true);
     };
 
     /**
@@ -259,8 +321,8 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
             }, 1000);
         }
 
-        map.updateSize();
-        map.display('save-map-map');
+        // attach map to save-map-map div
+        ui.mapPage('save-map-map');
     };
 
     /**
@@ -291,10 +353,33 @@ define(['map', 'utils', './cache'], function(map, utils, cache){
         map.showBBox(savedMapsLayer, details.bounds, details.poi);
     };
 
-    $(document).on('pageshow', '#saved-maps-page',  offlineMapsPage);
+    if(typeof(webdb) !== 'undefined'){
+        if(localStorage.getItem(webdb.DATABASE_CREATED) !== "true"){
+            webdb.createTablesIfRequired();
+        }
+    }
+
+    $(document).on('pageinit', '#saved-maps-page', offlineMapsPage);
+    $(document).on('pageshow', '#saved-maps-page', function(){
+        map.updateSize();
+    });
+
+
     $(document).on('pageshow', '#save-map-page', saveMapPage);
-    $(document).on('pageshow', '#save-map-name-dialog', saveMapNamePage);
+    $(document).on('pageinit', '#save-map-name-dialog', saveMapNamePage);
 
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
+
+    var layer = new MapWithLocalStorage({
+        name: 'osOpen',
+        url: map.getTMSURL(),
+        layerName: 'fieldtripgb@BNG',
+        type: 'jpg',
+        isBaseLayer: true,
+        serviceVersion: "1.0.0"
+    });
+
+    map.switchBaseLayer(layer);
+
 });

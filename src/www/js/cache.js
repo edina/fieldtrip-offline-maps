@@ -37,7 +37,8 @@ define(['map', 'utils'], function(map, utils){
 
     var maxDownloadStr = utils.bytesToSize(MAX_CACHE);
     var previews = {};
-
+    var count = 0;
+    var noOfTiles = 0;
     var imagesToDownloadQueue;
 
     /**
@@ -46,13 +47,13 @@ define(['map', 'utils'], function(map, utils){
      * @param value Local Image.
      */
     var downloadComplete = function(url, tileData, x, y, z, mapName){
-        ++this.count;
+        ++count;
 
-        var percent = ((this.count / this.noOfTiles) * 100).toFixed(0);
+        var percent = ((count / noOfTiles) * 100).toFixed(0);
 
         //$.mobile.loading( 'show', { text: percent  + '%'});
         utils.inform(percent  + '%');
-        if(this.count === this.noOfTiles){
+        if(count === noOfTiles){
             $.mobile.hidePageLoadingMsg();
         }
 
@@ -111,9 +112,7 @@ define(['map', 'utils'], function(map, utils){
             // TODO - needs to remove openlayers specific stuff
             var showMapPreview = function(options){
                 var pMap;
-                    console.log(previews);
                 if(typeof(previews[options.name]) === 'undefined'){
-                    console.log("===> " + options.name);
                     pMap = new OpenLayers.Map(
                         options.div,
                         map.getOptions()
@@ -152,8 +151,6 @@ define(['map', 'utils'], function(map, utils){
                     zoom: zoom,
                 });
 
-                console.log('#' + divId);
-                console.log($('#' + divId + '.olMap').length);
                 if($('#' + divId + '.olMap').length === 0){
                     map.render(divId);
                 }
@@ -192,15 +189,14 @@ define(['map', 'utils'], function(map, utils){
         if(imagesToDownloadQueue.length !== 0){
             var imageInfo = imagesToDownloadQueue.pop();
             if(imageInfo){
-                this.saveImage(imageInfo.url,
-                               imageInfo.zoom,
-                               imageInfo.tx,
-                               imageInfo.ty,
-                               imageInfo.type,
-                               mapName);
+                _this.saveImage(imageInfo.url,
+                                imageInfo.zoom,
+                                imageInfo.tx,
+                                imageInfo.ty,
+                                imageInfo.type,
+                                mapName);
             }
         }
-
     };
 
     /**
@@ -227,7 +223,7 @@ define(['map', 'utils'], function(map, utils){
         setSavedMap(maps);
     };
 
-var _this = {
+var _base = {
     AV_TILE_SIZE: 16384, // in bytes 16 KB
 
     /**
@@ -236,53 +232,16 @@ var _this = {
      */
     deleteSavedMapDetails: function(mapName){
         var maps = this.getSavedMaps();
-
-        var getLocalMapDir = function(cacheDir, name){
-            // remove file:// from cachedir fullpath
-
-            var path = cacheDir.fullPath;
-            if(path.slice(0,7) === "file://"){
-                path = path.substr(7);
-            }
-            return path + "/"+ name + "/" ;
-        };
-
-        var localMapDir = getLocalMapDir(this.cacheDir, mapName);
-        var onGetDirectorySuccess = function(directory){
-            var success = function (parent) {
-                webdb.deleteMap(mapName);
-            }
-
-            var fail = function(error) {
-                console.error("Remove Recursively Failed" + error.code);
-
-            }
-
-            directory.removeRecursively(success, fail);
-        }
-
-        var onGetDirectoryFail = function (error) {
-            console.error("*********** problem getting map tiles dir *********");
-            console.error(error.code);
-        }
-
-        this.cacheDir.getDirectory(
-            localMapDir,
-            {
-                create: false,
-                exclusive: false
-            },
-            onGetDirectorySuccess, onGetDirectoryFail
-        );
-
         if(maps){
-            var todo = 0;
-            $.mobile.loading('show' ,{text:'Deleting Tiles'});
+            //$.mobile.loading('show' ,{text:'Deleting Tiles'});
+            utils.inform('Deleting Tiles');
             $.mobile.hidePageLoadingMsg();
 
             delete maps[mapName];
-            this.setSavedMap(maps);
+            setSavedMap(maps);
         }
+
+        webdb.deleteMap(mapName);
     },
 
     /**
@@ -380,41 +339,57 @@ var _this = {
      * @param type Image file type.
      */
     saveImage: function(url, zoom, tx, ty, type, mapName){
-        var maxNumberOfFilesPerDir = 100;
-        var fileName = map.getStackType() + '_' + zoom + '_' + tx + '_' +  ty + '.' + type;
+        // TODO - check if image has been previously downloaded
+        var img = new Image()
+        img.src = url;
 
-        var subDirectory = Math.ceil(this.count / maxNumberOfFilesPerDir);
+        img.onload = $.proxy(function(event){
+            var canvas = document.createElement("canvas");
+            canvas.width = 256;
+            canvas.height = 256;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(event.target, 0, 0);
 
-        var getLocalFileName = function(cacheDir, fileName){
-            // remove file:// from cachedir fullpath
-
-            var path = cacheDir.fullPath;
-            if(path.slice(0,7) === "file://"){
-                path = path.substr(7);
-            }
-
-            return path + "/" + mapName + "/" + subDirectory + "/" + fileName;
-        };
-
-        console.debug("download " + url);
-        // no file, download it
-        var fileTransfer = new FileTransfer();
-        fileTransfer.download(
-            url + utils.getLoggingParams(true),
-            getLocalFileName(this.cacheDir, fileName),
-            $.proxy(function(entry) {
-                downloadComplete(url, getLocalFileName(this.cacheDir, fileName), tx, ty, zoom, mapName);
-            }, this),
-            $.proxy(function(error) {
-                console.error("download error source " + error.source);
-                console.error("download error target " + error.target);
-
-                // error code 3? - check whitelist
-                console.error("download error code: " + error.code);
-                downloadComplete();
-            }, this)
-        );
+            downloadComplete($(event.target).attr('src'), canvas.toDataURL(), tx, ty, zoom, mapName);
+        }, this);
     },
+
+    // saveImage: function(url, zoom, tx, ty, type, mapName){
+    //     var maxNumberOfFilesPerDir = 100;
+    //     var fileName = map.getStackType() + '_' + zoom + '_' + tx + '_' +  ty + '.' + type;
+
+    //     var subDirectory = Math.ceil(this.count / maxNumberOfFilesPerDir);
+
+    //     var getLocalFileName = function(cacheDir, fileName){
+    //         // remove file:// from cachedir fullpath
+
+    //         var path = cacheDir.fullPath;
+    //         if(path.slice(0,7) === "file://"){
+    //             path = path.substr(7);
+    //         }
+
+    //         return path + "/" + mapName + "/" + subDirectory + "/" + fileName;
+    //     };
+
+    //     console.debug("download " + url);
+    //     // no file, download it
+    //     var fileTransfer = new FileTransfer();
+    //     fileTransfer.download(
+    //         url + utils.getLoggingParams(true),
+    //         getLocalFileName(this.cacheDir, fileName),
+    //         $.proxy(function(entry) {
+    //             downloadComplete(url, getLocalFileName(this.cacheDir, fileName), tx, ty, zoom, mapName);
+    //         }, this),
+    //         $.proxy(function(error) {
+    //             console.error("download error source " + error.source);
+    //             console.error("download error target " + error.target);
+
+    //             // error code 3? - check whitelist
+    //             console.error("download error code: " + error.code);
+    //             downloadComplete();
+    //         }, this)
+    //     );
+    // },
 
     /**
      * Cache tile images.
@@ -435,13 +410,13 @@ var _this = {
             var details = this.getSavedMapDetails(mapName);
 
             if(details === undefined){
-                this.count = 0;
+                count = 0;
                 var layer = map.getBaseLayer();
 
-                //this.noOfTiles = dlSize / AV_TILE_SIZE;
+                noOfTiles = dlSize / this.AV_TILE_SIZE;
 
                 //$.mobile.loading( 'show', { text: "Saving ..." });
-                utils.inform("Saving ...");
+                utils.inform("Saving x...");
 
                 // store cached map details
                 var details = {
@@ -457,11 +432,11 @@ var _this = {
                 for(var zoom = min; zoom <= max; zoom++) {
                     var bounds = map.getExtent();
 
-                    var txMin = this.easting2tile(bounds.left, zoom);
-                    var txMax = this.easting2tile(bounds.right, zoom);
+                    var txMin = easting2tile(bounds.left, zoom);
+                    var txMax = easting2tile(bounds.right, zoom);
 
-                    var tyMin = this.northing2tile(bounds.bottom, zoom);
-                    var tyMax = this.northing2tile(bounds.top, zoom);
+                    var tyMin = northing2tile(bounds.bottom, zoom);
+                    var tyMax = northing2tile(bounds.top, zoom);
 
                     for (var tx = txMin; tx <= txMax; tx++) {
                         for (var ty = tyMin; ty <= tyMax; ty++) {
@@ -474,7 +449,6 @@ var _this = {
                                 ty:ty,
                                 type:type
                             };
-
                             imagesToDownloadQueue.push(imageInfo);
                         }
                     }
@@ -550,6 +524,166 @@ var _this = {
 
         return totalTileToDownload;
     },
+}
+
+var _this = {};
+
+/**
+ * TODO
+ */
+var _fs = {
+    /**
+     * Remove all cached tiles.
+     */
+    clearCache: function(callback){
+        this.parent.deleteCache(callback);
+        this.cacheDir.createReader().readEntries(
+            $.proxy(function(entries){
+                for (var i = 0; i < entries.length; i++) {
+                    this.cacheDir.getFile(entries[i].name,
+                                          {create: false, exclusive: false},
+                                          function(file){
+                                              file.remove();
+                                          },
+                                          function(error){
+                                              console.error('Failed to delete image:' + error);
+                                          });
+                }
+            }, this),
+            function(error){
+                alert('Problem reading cache directory: ' + error);
+            }
+        );
+    },
+
+    /**
+     * Remove saved map details from local storage.
+     * @param name Saved map name.
+     */
+    deleteSavedMapDetails: function(mapName){
+        var maps = this.getSavedMaps();
+
+        var getLocalMapDir = function(cacheDir, name){
+            // remove file:// from cachedir fullpath
+
+            var path = cacheDir.fullPath;
+            if(path.slice(0,7) === "file://"){
+                path = path.substr(7);
+            }
+            return path + "/"+ name + "/" ;
+        };
+
+        var localMapDir = getLocalMapDir(this.cacheDir, mapName);
+        var onGetDirectorySuccess = function(directory){
+            var success = function (parent) {
+                webdb.deleteMap(mapName);
+            }
+
+            var fail = function(error) {
+                console.error("Remove Recursively Failed" + error.code);
+
+            }
+
+            directory.removeRecursively(success, fail);
+        }
+
+        var onGetDirectoryFail = function (error) {
+            console.error("*********** problem getting map tiles dir *********");
+            console.error(error.code);
+        }
+
+        this.cacheDir.getDirectory(
+            localMapDir,
+            {
+                create: false,
+                exclusive: false
+            },
+            onGetDirectorySuccess, onGetDirectoryFail
+        );
+
+        // if(maps){
+        //     $.mobile.loading('show' ,{text:'Deleting Tiles'});
+        //     $.mobile.hidePageLoadingMsg();
+
+        //     delete maps[mapName];
+        //     this.setSavedMap(maps);
+        // }
+        _base.deleteSavedMapDetails(mapName);
+    },
+
+    /**
+     * Save image to sd card.
+     * @param url External Tile URL.
+     * @param zoom Map zoom level.
+     * @param tx Tile xcoord.
+     * @param ty Tile ycoord.
+     * @param mapName.
+     */
+    saveImage: function(url, zoom, tx, ty, type, mapName){
+        var maxNumberOfFilesPerDir = 100;
+        var fileName = _base.map.getStackType() +
+            '_' + zoom + '_' + tx + '_' +  ty + '.' + type;
+
+        var subDirectory = Math.ceil(this.parent.count / maxNumberOfFilesPerDir);
+
+        var getLocalFileName = function(cacheDir, fileName){
+            // remove file:// from cachedir fullpath
+
+            var path = cacheDir.fullPath;
+            if(path.slice(0,7) === "file://"){
+                path = path.substr(7);
+            }
+
+            return path + "/"+ mapName +  "/" + subDirectory + "/" + fileName;
+        };
+
+
+        console.debug("download " + url);
+        // no file, download it
+        var fileTransfer = new FileTransfer();
+        fileTransfer.download(
+            url + Utils.getLoggingParams(true),
+            getLocalFileName(this.cacheDir, fileName),
+            $.proxy(function(entry) {
+
+                this.parent.downloadComplete(url, getLocalFileName(this.cacheDir, fileName), tx, ty, zoom, mapName);
+            }, this),
+            $.proxy(function(error) {
+                console.error("download error source " + error.source);
+                console.error("download error target " + error.target);
+
+                // error code 3? - check whitelist
+                console.error("download error code: " + error.code);
+                this.parent.downloadComplete();
+            }, this)
+        );
+
+    }
+};
+
+if(utils.isMobileDevice()){
+    // create directory structure for caching
+    // Changed to persistent cache for iphone3G issue with temp cache
+    // http://community.phonegap.com/nitobi/topics/localfilesystem_persistent_and_ios_data_storage_guidelines
+    utils.getPersistentRoot($.proxy(function(dir){
+        dir.getDirectory(
+            "mapcache",
+            {create: true, exclusive: false},
+            $.proxy(function(cacheDir){
+                this.parent.cacheDir = cacheDir;
+                this.cacheDir = cacheDir;
+
+                deviceDependent.preventGalleryScanning(cacheDir);
+            }, this),
+            function(){
+                alert('Failed finding root directory. Caching will be disabled.');
+            });
+    }, this));
+
+    $.extend(_this, _base, _fs);
+}
+else{
+    _this = _base;
 }
 
 return _this;

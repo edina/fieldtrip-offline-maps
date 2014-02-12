@@ -1,11 +1,19 @@
 {
     "popups": {
-        "popup-delete":{
-            "template": "saved-maps-popup-delete.html",
-            "data": {
+        "delete":{
+            "template": "saved-maps-delete-popup.html",
+            "data":{
                 "question": "Are you sure you want to delete map",
                 "cancel": "Cancel",
                 "delete": "Delete"
+            }
+        },
+        "list": {
+            "template": "saved-maps-list-popup.html",
+            "data":{
+                "view": "View on Map",
+                "delete": "Delete",
+                "close": "Close"
             }
         }
     }
