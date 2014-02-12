@@ -354,43 +354,6 @@ var _base = {
         }, this);
     },
 
-    // saveImage: function(url, zoom, tx, ty, type, mapName){
-    //     var maxNumberOfFilesPerDir = 100;
-    //     var fileName = map.getStackType() + '_' + zoom + '_' + tx + '_' +  ty + '.' + type;
-
-    //     var subDirectory = Math.ceil(this.count / maxNumberOfFilesPerDir);
-
-    //     var getLocalFileName = function(cacheDir, fileName){
-    //         // remove file:// from cachedir fullpath
-
-    //         var path = cacheDir.fullPath;
-    //         if(path.slice(0,7) === "file://"){
-    //             path = path.substr(7);
-    //         }
-
-    //         return path + "/" + mapName + "/" + subDirectory + "/" + fileName;
-    //     };
-
-    //     console.debug("download " + url);
-    //     // no file, download it
-    //     var fileTransfer = new FileTransfer();
-    //     fileTransfer.download(
-    //         url + utils.getLoggingParams(true),
-    //         getLocalFileName(this.cacheDir, fileName),
-    //         $.proxy(function(entry) {
-    //             downloadComplete(url, getLocalFileName(this.cacheDir, fileName), tx, ty, zoom, mapName);
-    //         }, this),
-    //         $.proxy(function(error) {
-    //             console.error("download error source " + error.source);
-    //             console.error("download error target " + error.target);
-
-    //             // error code 3? - check whitelist
-    //             console.error("download error code: " + error.code);
-    //             downloadComplete();
-    //         }, this)
-    //     );
-    // },
-
     /**
      * Cache tile images.
      * @param name Saved map name.
@@ -532,11 +495,29 @@ var _this = {};
  * TODO
  */
 var _fs = {
+
+    init: function(callback){
+        // create directory structure for caching
+        // Changed to persistent cache for iphone3G issue with temp cache
+        // http://community.phonegap.com/nitobi/topics/localfilesystem_persistent_and_ios_data_storage_guidelines
+        utils.getPersistentRoot($.proxy(function(dir){
+            dir.getDirectory(
+                "mapcache",
+                {create: true, exclusive: false},
+                $.proxy(function(cacheDir){
+                    this.cacheDir = cacheDir;
+                    this.preventGalleryScanning(cacheDir);
+                }, this),
+                function(){
+                    alert('Failed finding root directory. Caching will be disabled.');
+                });
+        }, this));
+    },
+
     /**
      * Remove all cached tiles.
      */
     clearCache: function(callback){
-        this.parent.deleteCache(callback);
         this.cacheDir.createReader().readEntries(
             $.proxy(function(entries){
                 for (var i = 0; i < entries.length; i++) {
@@ -563,17 +544,13 @@ var _fs = {
     deleteSavedMapDetails: function(mapName){
         var maps = this.getSavedMaps();
 
-        var getLocalMapDir = function(cacheDir, name){
-            // remove file:// from cachedir fullpath
+        // remove file:// from cachedir fullpath
+        var path = this.cacheDir.fullPath;
+        if(path.slice(0,7) === "file://"){
+            path = path.substr(7);
+        }
 
-            var path = cacheDir.fullPath;
-            if(path.slice(0,7) === "file://"){
-                path = path.substr(7);
-            }
-            return path + "/"+ name + "/" ;
-        };
-
-        var localMapDir = getLocalMapDir(this.cacheDir, mapName);
+        var localMapDir = path + "/" + name + "/" ;
         var onGetDirectorySuccess = function(directory){
             var success = function (parent) {
                 webdb.deleteMap(mapName);
@@ -601,14 +578,22 @@ var _fs = {
             onGetDirectorySuccess, onGetDirectoryFail
         );
 
-        // if(maps){
-        //     $.mobile.loading('show' ,{text:'Deleting Tiles'});
-        //     $.mobile.hidePageLoadingMsg();
-
-        //     delete maps[mapName];
-        //     this.setSavedMap(maps);
-        // }
         _base.deleteSavedMapDetails(mapName);
+    },
+
+    /**
+     * Creating .Nomedia file in cache directory prevents gallery scanning
+     * directory.
+     */
+    preventGalleryScanning: function(){
+        this.cacheDir.getFile(
+            ".Nomedia",
+            {create: true, exclusive: false},
+            function(parent){},
+            function(error){
+                console.error("Failed to create .Nomedia" + error.code);
+            }
+        );
     },
 
     /**
@@ -621,66 +606,58 @@ var _fs = {
      */
     saveImage: function(url, zoom, tx, ty, type, mapName){
         var maxNumberOfFilesPerDir = 100;
-        var fileName = _base.map.getStackType() +
-            '_' + zoom + '_' + tx + '_' +  ty + '.' + type;
+        var fileName = map.getStackType() + '_' + zoom +
+            '_' + tx + '_' +  ty + '.' + type;
 
-        var subDirectory = Math.ceil(this.parent.count / maxNumberOfFilesPerDir);
+        var subDirectory = Math.ceil(count / maxNumberOfFilesPerDir);
 
-        var getLocalFileName = function(cacheDir, fileName){
-            // remove file:// from cachedir fullpath
+        //var getLocalFileName = function(cacheDir, fileName){
+        // remove file:// from cachedir fullpath
+        var path = this.cacheDir.fullPath;
+        if(path.slice(0,7) === "file://"){
+            path = path.substr(7);
+        }
 
-            var path = cacheDir.fullPath;
-            if(path.slice(0,7) === "file://"){
-                path = path.substr(7);
-            }
-
-            return path + "/"+ mapName +  "/" + subDirectory + "/" + fileName;
-        };
-
-
+        //return path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
+        //};
+        localFileName = path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
         console.debug("download " + url);
-        // no file, download it
-        var fileTransfer = new FileTransfer();
-        fileTransfer.download(
-            url + Utils.getLoggingParams(true),
-            getLocalFileName(this.cacheDir, fileName),
-            $.proxy(function(entry) {
 
-                this.parent.downloadComplete(url, getLocalFileName(this.cacheDir, fileName), tx, ty, zoom, mapName);
-            }, this),
-            $.proxy(function(error) {
+        var fileTransfer = new FileTransfer();
+        console.log(this);
+
+        fileTransfer.download(
+            url + utils.getLoggingParams(true),
+            localFileName,
+            function(entry){
+                downloadComplete(url, localFileName, tx, ty, zoom, mapName);
+            },
+            function(error) {
                 console.error("download error source " + error.source);
                 console.error("download error target " + error.target);
 
                 // error code 3? - check whitelist
                 console.error("download error code: " + error.code);
-                this.parent.downloadComplete();
-            }, this)
+                downloadComplete();
+            }
         );
+    }
+};
 
+var _ios = {
+    preventGalleryScanning: function(){
+        // do nothing on ios
     }
 };
 
 if(utils.isMobileDevice()){
-    // create directory structure for caching
-    // Changed to persistent cache for iphone3G issue with temp cache
-    // http://community.phonegap.com/nitobi/topics/localfilesystem_persistent_and_ios_data_storage_guidelines
-    utils.getPersistentRoot($.proxy(function(dir){
-        dir.getDirectory(
-            "mapcache",
-            {create: true, exclusive: false},
-            $.proxy(function(cacheDir){
-                this.parent.cacheDir = cacheDir;
-                this.cacheDir = cacheDir;
-
-                deviceDependent.preventGalleryScanning(cacheDir);
-            }, this),
-            function(){
-                alert('Failed finding root directory. Caching will be disabled.');
-            });
-    }, this));
-
     $.extend(_this, _base, _fs);
+
+    if(utils.isIOSApp()){
+        $.extend(_this, _ios);
+    }
+
+    _this.init();
 }
 else{
     _this = _base;
