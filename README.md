@@ -1,6 +1,6 @@
 ### Offline Maps
 
-Offline Maps is a [Fieldtrip Open](https://github.com/edina/fieldtrip-open) plugin for caching maps on the device.
+Offline Maps is a [Fieldtrip Open](https://github.com/edina/fieldtrip-open) plugin for caching maps on a mobile device.
 
 #### Dependencies
 
