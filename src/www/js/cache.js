@@ -51,7 +51,6 @@ define(['map', 'utils'], function(map, utils){
 
         var percent = ((count / noOfTiles) * 100).toFixed(0);
 
-        //$.mobile.loading( 'show', { text: percent  + '%'});
         utils.inform(percent  + '%');
         if(count === noOfTiles){
             $.mobile.hidePageLoadingMsg();
@@ -233,7 +232,6 @@ var _base = {
     deleteSavedMapDetails: function(mapName){
         var maps = this.getSavedMaps();
         if(maps){
-            //$.mobile.loading('show' ,{text:'Deleting Tiles'});
             utils.inform('Deleting Tiles');
             $.mobile.hidePageLoadingMsg();
 
@@ -378,8 +376,7 @@ var _base = {
 
                 noOfTiles = dlSize / this.AV_TILE_SIZE;
 
-                //$.mobile.loading( 'show', { text: "Saving ..." });
-                utils.inform("Saving x...");
+                utils.inform("Saving ...");
 
                 // store cached map details
                 var details = {

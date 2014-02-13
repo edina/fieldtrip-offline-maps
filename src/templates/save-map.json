@@ -1,4 +1,15 @@
 {
+    "header": {
+        "buttons" : {
+            "user-locate": {
+                "class": "user-locate",
+                "data-role": "button",
+                "data-inline": "true",
+                "data-transition": "none",
+                "data-iconpos": "notext"
+            }
+        }
+    },
     "body": {
         "download-map": "Download Map",
         "save-map": "Save Map (use offline)",
