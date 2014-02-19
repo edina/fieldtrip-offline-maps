@@ -37,6 +37,23 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
     /**
      * Map with local storage caching.
      * @params options:
+     *     url            - TMS URL
+     */
+    var MapWithLocalStorage = function(){
+        if(map.isBaseLayerTMS()){
+            return new FGBMapWithLocalStorage({
+                url: map.getTMSURL()
+            });
+        }else{
+            return new OSMMapWithLocalStorage({
+                url: utils.getMapServerUrl()+'/${z}/${x}/${y}.png'
+            });
+        }
+    };
+
+    /**
+     * FGB Map with local storage caching.
+     * @params options:
      *     name           - map name
      *     url            - TMS URL
      *     layerName      - TMS layer name
@@ -44,13 +61,14 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
      *     serviceVersion - TMS service version
      *     isBaseLayer    - is this the base layer?
      */
-    var MapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
+    var FGBMapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
         initialize: function(options) {
             //this.storage = options.db;
 
-            this.serviceVersion = options.serviceVersion;
-            this.layername = options.layerName;
-            this.type = options.type;
+            var baseLayer = map.getBaseLayer();
+            this.serviceVersion = baseLayer.serviceVersion;
+            this.layername = baseLayer.layername;
+            this.type = baseLayer.type;
 
             // this boolean determines which overriden method is called getURLasync
             // or getURL. Using getURLasync was causing the application to freeze,
@@ -60,33 +78,43 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             this.isBaseLayer = options.isBaseLayer;
             OpenLayers.Layer.TMS.prototype.initialize.apply(
                 this,
-                [options.name, options.url, {}]
+                [baseLayer.name, options.url, {}]
             );
         },
         getURLasync: function(bounds, callback, scope) {
             var url = OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
-            var urlData = this.getUrlWithXYZ(bounds);
-            webdb.getCachedTilePath( callback, scope, urlData.x, urlData.y , urlData.z, urlData.url);
-        },
-        getUrlWithXYZ: function(bounds){
-            bounds = this.adjustBounds(bounds);
-            var res = this.map.getResolution();
-            var x = Math.round((bounds.left - this.tileOrigin.lon) / (res * this.tileSize.w));
-            var y = Math.round((bounds.bottom - this.tileOrigin.lat) / (res * this.tileSize.h));
-            var z = this.serverResolutions != null ?
-                OpenLayers.Util.indexOf(this.serverResolutions, res) :
-                this.map.getZoom() + this.zoomOffset;
-            var path = this.serviceVersion + "/" + this.layername + "/" + z + "/" + x + "/" + y + "." + this.type;
-            var url = this.url;
-            if (OpenLayers.Util.isArray(url)) {
-                url = this.selectUrl(path, url);
-            }
-            return { url: url + path, x:x, y:y, z:z};
-
+            var data = url.match(/\/(\d+)/g).join("").split("/");
+            webdb.getCachedTilePath( callback, scope, data[2], data[3] , data[1], url);
         },
         getURL: function(bounds) {
             return OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
         },
+    });
+
+    /**
+     * OSM Map with local storage caching.
+     * @params options:
+     *     url            - TMS URL
+     */
+    var OSMMapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.OSM, {
+        initialize: function(options) {
+
+            // this boolean determines which overriden method is called getURLasync
+            // or getURL. Using getURLasync was causing the application to freeze,
+            // often getting a ANR
+            this.async = typeof(webdb) !== 'undefined';
+            this.url = [options.url]
+
+            OpenLayers.Layer.OSM.prototype.initialize.apply(
+                this,
+                []
+            );
+        },
+        getURLasync: function(bounds, callback, scope) {
+            var url = OpenLayers.Layer.OSM.prototype.getURL.apply(this, [bounds]);
+            var urlData = OpenLayers.Layer.XYZ.prototype.getXYZ.apply(this, [bounds]);
+            webdb.getCachedTilePath( callback, scope, urlData.x, urlData.y , urlData.z, url);
+        }
     });
 
     // create layer on map for showing saved map extent
@@ -371,14 +399,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 
-    var layer = new MapWithLocalStorage({
-        name: 'osOpen',
-        url: map.getTMSURL(),
-        layerName: 'fieldtripgb@BNG',
-        type: 'jpg',
-        isBaseLayer: true,
-        serviceVersion: "1.0.0"
-    });
+    var layer = new MapWithLocalStorage();
 
     map.switchBaseLayer(layer);
 

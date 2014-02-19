@@ -66,6 +66,38 @@ define(['map', 'utils'], function(map, utils){
     };
 
     /**
+     * Convert easting or longitude to TMS tile number.
+     * @param eastings
+     * @param zoom
+     * @param base layer name
+     * @return Tile number.
+     */
+    var xpoint2tile = function(x, zoom, map_base){
+        var caps = map.getTileMapCapabilities();
+        if(map_base === 'osm'){
+            return long2tile(x, zoom);
+        }else{
+            return easting2tile(x, zoom);
+        }
+    }
+
+    /**
+     * Convert northing or latitude to TMS tile number.
+     * @param northings
+     * @param zoom
+     * @param base layer name
+     * @return Tile number.
+     */
+    var ypoint2tile = function(y, zoom, map_base){
+        var caps = map.getTileMapCapabilities();
+        if(map_base === 'osm'){
+            return long2tile(y, zoom);
+        }else{
+            return easting2tile(y, zoom);
+        }
+    }
+
+    /**
      * Convert easting to TMS tile number.
      * @param eastings
      * @param zoom
@@ -98,6 +130,27 @@ define(['map', 'utils'], function(map, utils){
     };
 
     /**
+     * Convert longitude to TMS tile number.
+     * @param lon
+     * @param zoom
+     * @return Tile number.
+     */
+    var long2tile = function(lon, zoom){
+        return (Math.floor((lon + 180) / 360 * Math.pow(2, zoom)));
+    };
+
+
+    /**
+     * Convert latitude to TMS tile number.
+     * @param lat
+     * @param zoom
+     * @return Tile number.
+     */
+    var lat2tile = function(lat, zoom)  {
+        return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)));
+    };
+
+    /**
      * Display preview of cached images.
      */
     var previewImages = function(){
@@ -117,8 +170,11 @@ define(['map', 'utils'], function(map, utils){
                         map.getOptions()
                     );
 
-                    var baseLaser = map.getBaseLayer();
-                    var layer = new OpenLayers.Layer.TMS(
+                    var layer, baseLaser = map.getBaseLayer();
+                    if(baseLaser instanceof OpenLayers.Layer.OSM){
+                        layer = new OpenLayers.Layer.OSM();
+                    }else{
+                        layer = new OpenLayers.Layer.TMS(
                         "os",
                         baseLaser.url,
                         {
@@ -126,6 +182,7 @@ define(['map', 'utils'], function(map, utils){
                             type: baseLaser.type
                         }
                     );
+                    }
 
                     pMap.addLayer(layer);
                     previews[options.name] = pMap;
@@ -358,7 +415,7 @@ var _base = {
      * @param min Start zoom level to cache.
      * @param max End zoom level to cache.
      */
-    saveMap: function(mapName, min, max){
+    saveMap: function(mapName, min, max, map_base){
         mapName = utils.santiseForFilename(mapName);
         var success = true;
         var dlSize = this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE;
@@ -392,11 +449,11 @@ var _base = {
                 for(var zoom = min; zoom <= max; zoom++) {
                     var bounds = map.getExtent();
 
-                    var txMin = easting2tile(bounds.left, zoom);
-                    var txMax = easting2tile(bounds.right, zoom);
+                    var txMin = xpoint2tile(bounds.left, zoom, map_base);
+                    var txMax = xpoint2tile(bounds.right, zoom, map_base);
 
-                    var tyMin = northing2tile(bounds.bottom, zoom);
-                    var tyMax = northing2tile(bounds.top, zoom);
+                    var tyMin = ypoint2tile(bounds.bottom, zoom, map_base);
+                    var tyMax = ypoint2tile(bounds.top, zoom, map_base);
 
                     for (var tx = txMin; tx <= txMax; tx++) {
                         for (var ty = tyMin; ty <= tyMax; ty++) {
