@@ -37,14 +37,15 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
     /**
      * Map with local storage caching.
      * @params options:
-     *     url            - TMS URL
+     *   url - TMS URL
      */
-    var MapWithLocalStorage = function(){
+    var getMapWithLocalStorage = function(){
         if(map.isBaseLayerTMS()){
             return new FGBMapWithLocalStorage({
                 url: map.getTMSURL()
             });
-        }else{
+        }
+        else{
             return new OSMMapWithLocalStorage({
                 url: utils.getMapServerUrl()+'/${z}/${x}/${y}.png'
             });
@@ -54,17 +55,10 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
     /**
      * FGB Map with local storage caching.
      * @params options:
-     *     name           - map name
-     *     url            - TMS URL
-     *     layerName      - TMS layer name
-     *     type           - layer image type
-     *     serviceVersion - TMS service version
-     *     isBaseLayer    - is this the base layer?
+     *   url - TMS URL
      */
     var FGBMapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
         initialize: function(options) {
-            //this.storage = options.db;
-
             var baseLayer = map.getBaseLayer();
             this.serviceVersion = baseLayer.serviceVersion;
             this.layername = baseLayer.layername;
@@ -75,7 +69,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             // often getting a ANR
             this.async = typeof(webdb) !== 'undefined';
 
-            this.isBaseLayer = options.isBaseLayer;
+            this.isBaseLayer = true;
             OpenLayers.Layer.TMS.prototype.initialize.apply(
                 this,
                 [baseLayer.name, options.url, {}]
@@ -293,7 +287,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
     };
 
     /**
-     * TODO
+     * Initialise save map page.
      */
     var saveMapPage = function(){
         $('#cache-slider').bind(
@@ -373,14 +367,6 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
         cache.setSaveStats(zooms.current, zooms.current);
     };
 
-    /**
-     * Show saved map layer and centre on previously saved map.
-     * @param details Saved map details.
-     */
-    var showSavedMap = function(details){
-        map.showBBox(savedMapsLayer, details.bounds, details.poi);
-    };
-
     if(typeof(webdb) !== 'undefined'){
         if(localStorage.getItem(webdb.DATABASE_CREATED) !== "true"){
             webdb.createTablesIfRequired();
@@ -392,15 +378,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
         map.updateSize();
     });
 
-
     $(document).on('pageshow', '#save-map-page', saveMapPage);
     $(document).on('pageinit', '#save-map-name-dialog', saveMapNamePage);
 
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 
-    var layer = new MapWithLocalStorage();
-
-    map.switchBaseLayer(layer);
-
+    map.switchBaseLayer(getMapWithLocalStorage());
 });
