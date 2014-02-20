@@ -6,11 +6,11 @@ Offline Maps is a [Fieldtrip Open](https://github.com/edina/fieldtrip-open) plug
 
 [cordova-plugin-file-transfer](https://github.com/apache/cordova-plugin-file-transfer) should be added to the [project plugins file](https://github.com/edina/fieldtrip-open/blob/master/PROJECTS.md#plugins).
 
-#### Pages
+#### Add New Buttons
 
 ##### Save Map
 
-Page for selecting area on map to download. Example:
+Button to page for selecting area on map to download. Example:
 
 ```
 {
@@ -30,7 +30,7 @@ Page for selecting area on map to download. Example:
 
 ##### Saved Maps
 
-Page for managing previous saved maps. Example:
+Button to page for managing previous saved maps. Example:
 
 ```
 {
