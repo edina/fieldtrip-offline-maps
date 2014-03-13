@@ -39,17 +39,18 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
      * @params options:
      *   url - TMS URL
      */
-    var getMapWithLocalStorage = function(){
+    var getMapWithLocalStorage = function(url){
+        var layer;
         if(map.isBaseLayerTMS()){
-            return new FGBMapWithLocalStorage({
-                url: map.getTMSURL()
-            });
+            layer = new FGBMapWithLocalStorage({url: map.getTMSURL(url)});
         }
         else{
-            return new OSMMapWithLocalStorage({
+            layer = new OSMMapWithLocalStorage({
                 url: utils.getMapServerUrl()+'/${z}/${x}/${y}.png'
             });
         }
+
+        return layer;
     };
 
     /**
@@ -383,6 +384,18 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
 
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
+
+    $(document).on('change', '#settings-mapserver-url', function(){
+        if(utils.isMobileDevice()){
+            map.switchBaseLayer(
+                getMapWithLocalStorage(
+                    $('#settings-mapserver-url option:selected').val())
+            );
+        }
+        else{
+            utils.inform("Switching doesn't work on the desktop.");
+        }
+    });
 
     map.switchBaseLayer(getMapWithLocalStorage());
 });
