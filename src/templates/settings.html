@@ -1,0 +1,10 @@
+<div data-role="fieldcontain">
+  <label for="settings-mapserver-url" class="select">Map Server:</label>
+  <select id="settings-mapserver-url" name="settings-entry">
+  {% if settings|length > 0 %}
+    {% for key, value in settings.iteritems() %}
+      <option value="{{value}}">{{key}}</option>
+    {% endfor %}
+  {% endif %}
+  </select>
+</div>
