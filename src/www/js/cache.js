@@ -91,9 +91,9 @@ define(['map', 'utils'], function(map, utils){
     var ypoint2tile = function(y, zoom, map_base){
         var caps = map.getTileMapCapabilities();
         if(map_base === 'osm'){
-            return long2tile(y, zoom);
+            return lat2tile(y, zoom);
         }else{
-            return easting2tile(y, zoom);
+            return northing2tile(y, zoom);
         }
     }
 
