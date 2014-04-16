@@ -73,7 +73,6 @@ define(['map', 'utils'], function(map, utils){
      * @return Tile number.
      */
     var xpoint2tile = function(x, zoom, map_base){
-        var caps = map.getTileMapCapabilities();
         if(map_base === 'osm'){
             return long2tile(x, zoom);
         }else{
@@ -89,7 +88,6 @@ define(['map', 'utils'], function(map, utils){
      * @return Tile number.
      */
     var ypoint2tile = function(y, zoom, map_base){
-        var caps = map.getTileMapCapabilities();
         if(map_base === 'osm'){
             return long2tile(y, zoom);
         }else{
@@ -665,16 +663,13 @@ var _fs = {
 
         var subDirectory = Math.ceil(count / maxNumberOfFilesPerDir);
 
-        //var getLocalFileName = function(cacheDir, fileName){
         // remove file:// from cachedir fullpath
         var path = this.cacheDir.fullPath;
         if(path.slice(0,7) === "file://"){
             path = path.substr(7);
         }
 
-        //return path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
-        //};
-        localFileName = path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
+        var localFileName = path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
         console.debug("download " + url);
 
         var fileTransfer = new FileTransfer();
