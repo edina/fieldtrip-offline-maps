@@ -98,7 +98,15 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             // or getURL. Using getURLasync was causing the application to freeze,
             // often getting a ANR
             this.async = typeof(webdb) !== 'undefined';
-            this.url = [options.url]
+            if (options.url === "undefined/${z}/${x}/${y}.png") {
+                this.url = [
+                    'http://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                    'http://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                    'http://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
+                    ];
+            }else{
+                this.url = [options.url]
+            }
 
             OpenLayers.Layer.OSM.prototype.initialize.apply(
                 this,
@@ -278,9 +286,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             'pageremove',
             function(){
                 if(saveMap){
+                    console.log(utils.getMapSettings()['baseLayer'])
                     if(cache.saveMap($('#saved-map-name-dialog-text').val(),
                                      map.getZoomLevels().current,
-                                     $('#saved-map-name-dialog-save-to').val())){
+                                     $('#saved-map-name-dialog-save-to').val(),
+                                     utils.getMapSettings()['baseLayer'])){
                     }
                 }
             }
