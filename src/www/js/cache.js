@@ -673,7 +673,6 @@ var _fs = {
         console.debug("download " + url);
 
         var fileTransfer = new FileTransfer();
-        console.log(this);
 
         fileTransfer.download(
             url + utils.getLoggingParams(true),
