@@ -33,6 +33,7 @@ DAMAGE.
 
 define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
+    cache.setBase(utils.getMapSettings()['baseLayer']);
 
     /**
      * Map with local storage caching.
@@ -286,11 +287,9 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             'pageremove',
             function(){
                 if(saveMap){
-                    console.log(utils.getMapSettings()['baseLayer'])
                     if(cache.saveMap($('#saved-map-name-dialog-text').val(),
                                      map.getZoomLevels().current,
-                                     $('#saved-map-name-dialog-save-to').val(),
-                                     utils.getMapSettings()['baseLayer'])){
+                                     $('#saved-map-name-dialog-save-to').val())){
                     }
                 }
             }

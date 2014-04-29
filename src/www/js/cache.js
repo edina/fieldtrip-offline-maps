@@ -40,6 +40,7 @@ define(['map', 'utils'], function(map, utils){
     var count = 0;
     var noOfTiles = 0;
     var imagesToDownloadQueue;
+    var map_base;
 
     /**
      * Single image download is complete.
@@ -64,36 +65,6 @@ define(['map', 'utils'], function(map, utils){
             webdb.insertCachedTilePath(x, y, z, tileData, mapName, callback);
         }
     };
-
-    /**
-     * Convert easting or longitude to TMS tile number.
-     * @param eastings
-     * @param zoom
-     * @param base layer name
-     * @return Tile number.
-     */
-    var xpoint2tile = function(x, zoom, map_base){
-        if(map_base === 'osm'){
-            return long2tile(x, zoom);
-        }else{
-            return easting2tile(x, zoom);
-        }
-    }
-
-    /**
-     * Convert northing or latitude to TMS tile number.
-     * @param northings
-     * @param zoom
-     * @param base layer name
-     * @return Tile number.
-     */
-    var ypoint2tile = function(y, zoom, map_base){
-        if(map_base === 'osm'){
-            return lat2tile(y, zoom);
-        }else{
-            return northing2tile(y, zoom);
-        }
-    }
 
     /**
      * Convert easting to TMS tile number.
@@ -413,7 +384,7 @@ var _base = {
      * @param min Start zoom level to cache.
      * @param max End zoom level to cache.
      */
-    saveMap: function(mapName, min, max, map_base){
+    saveMap: function(mapName, min, max){
         mapName = utils.santiseForFilename(mapName);
         var success = true;
         var dlSize = this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE;
@@ -443,19 +414,33 @@ var _base = {
                 imagesToDownloadQueue = [];
 
                 var type = map.getTileFileType();
+                var xpoint2tile, ypoint2tile, projections;
+                if(map_base === 'osm'){
+                    xpoint2tile = long2tile;
+                    ypoint2tile = lat2tile;
+                    projections = map.getProjections();
+                }else{
+                    xpoint2tile = easting2tile;
+                    ypoint2tile = northing2tile;
+                }
 
                 for(var zoom = min; zoom <= max; zoom++) {
-                    var bounds = map.getExtent();
+                    if(map_base === 'osm'){
+                        var bounds = map.getExtent().transform(projections[0], projections[1]);
+                    }else{
+                        var bounds = map.getExtent();
+                    }
 
-                    var txMin = xpoint2tile(bounds.left, zoom, map_base);
-                    var txMax = xpoint2tile(bounds.right, zoom, map_base);
+                    var txMin = xpoint2tile(bounds.left, zoom);
+                    var txMax = xpoint2tile(bounds.right, zoom);
 
-                    var tyMin = ypoint2tile(bounds.bottom, zoom, map_base);
-                    var tyMax = ypoint2tile(bounds.top, zoom, map_base);
+                    var tyMin = ypoint2tile(bounds.bottom, zoom);
+                    var tyMax = ypoint2tile(bounds.top, zoom);
 
                     for (var tx = txMin; tx <= txMax; tx++) {
-                        for (var ty = tyMin; ty <= tyMax; ty++) {
+                        for (var ty = tyMax; ty <= tyMin; ty++) {
                             var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+                            console.log(url)
 
                             var imageInfo = {
                                 url: url,
@@ -483,6 +468,13 @@ var _base = {
         }
 
         return success;
+    },
+
+    /**
+     * Set the map_base
+     */
+    setBase: function(val){
+        map_base = val;
     },
 
     /**
@@ -520,12 +512,23 @@ var _base = {
 
         var bounds = map.getExtent();
         if(bounds !== null){
-            for (var zoom = min; zoom <= max; zoom++){
-                var txMin = easting2tile(bounds.left, zoom);
-                var txMax = easting2tile(bounds.right, zoom);
+            var xpoint2tile, ypoint2tile;
+            if(map_base === 'osm'){
+                xpoint2tile = long2tile;
+                ypoint2tile = lat2tile;
+                var projections = map.getProjections();
+                bounds = bounds.transform(projections[0], projections[1]);
+            }else{
+                xpoint2tile = easting2tile;
+                ypoint2tile = northing2tile;
+            }
 
-                var tyMin = northing2tile(bounds.bottom, zoom);
-                var tyMax = northing2tile(bounds.top, zoom);
+            for (var zoom = min; zoom <= max; zoom++){
+                var txMin = xpoint2tile(bounds.left, zoom);
+                var txMax = xpoint2tile(bounds.right, zoom);
+
+                var tyMin = ypoint2tile(bounds.bottom, zoom);
+                var tyMax = ypoint2tile(bounds.top, zoom);
 
                 var ntx = txMax - txMin + 1;
                 var nty = tyMax - tyMin + 1;
