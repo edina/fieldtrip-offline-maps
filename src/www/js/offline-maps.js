@@ -99,15 +99,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             // or getURL. Using getURLasync was causing the application to freeze,
             // often getting a ANR
             this.async = typeof(webdb) !== 'undefined';
-            if (options.url === "undefined/${z}/${x}/${y}.png") {
-                this.url = [
-                    'http://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                    'http://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                    'http://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
-                    ];
-            }else{
-                this.url = [options.url]
-            }
+            this.url = [
+                'http://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                'http://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                'http://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
+            ];
 
             OpenLayers.Layer.OSM.prototype.initialize.apply(
                 this,

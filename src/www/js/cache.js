@@ -365,6 +365,7 @@ var _base = {
     saveImage: function(url, zoom, tx, ty, type, mapName){
         // TODO - check if image has been previously downloaded
         var img = new Image()
+        img.crossOrigin = "anonymous"; // no credentials flag. Same as img.crossOrigin='anonymous'
         img.src = url;
 
         img.onload = $.proxy(function(event){
@@ -411,47 +412,10 @@ var _base = {
                     'images': []
                 }
 
-                imagesToDownloadQueue = [];
-
-                var type = map.getTileFileType();
-                var xpoint2tile, ypoint2tile, projections;
                 if(map_base === 'osm'){
-                    xpoint2tile = long2tile;
-                    ypoint2tile = lat2tile;
-                    projections = map.getProjections();
+                    imagesToDownloadQueue = this.saveMapOSM(min, max);
                 }else{
-                    xpoint2tile = easting2tile;
-                    ypoint2tile = northing2tile;
-                }
-
-                for(var zoom = min; zoom <= max; zoom++) {
-                    if(map_base === 'osm'){
-                        var bounds = map.getExtent().transform(projections[0], projections[1]);
-                    }else{
-                        var bounds = map.getExtent();
-                    }
-
-                    var txMin = xpoint2tile(bounds.left, zoom);
-                    var txMax = xpoint2tile(bounds.right, zoom);
-
-                    var tyMin = ypoint2tile(bounds.bottom, zoom);
-                    var tyMax = ypoint2tile(bounds.top, zoom);
-
-                    for (var tx = txMin; tx <= txMax; tx++) {
-                        for (var ty = tyMax; ty <= tyMin; ty++) {
-                            var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
-                            console.log(url)
-
-                            var imageInfo = {
-                                url: url,
-                                zoom: zoom,
-                                tx:tx,
-                                ty:ty,
-                                type:type
-                            };
-                            imagesToDownloadQueue.push(imageInfo);
-                        }
-                    }
+                    imagesToDownloadQueue = this.saveMapFGB(min, max);
                 }
 
                 var downloadImageThreads = 8;
@@ -468,6 +432,90 @@ var _base = {
         }
 
         return success;
+    },
+
+    /**
+     * get tiles details in array for FGB
+     * @param min
+     * @param max
+     */
+    saveMapFGB: function(min, max){
+        var imagesToDownloadQueue = [];
+
+        var type = map.getTileFileType(),
+        xpoint2tile = easting2tile,
+        ypoint2tile = northing2tile;
+
+        for(var zoom = min; zoom <= max; zoom++) {
+            var bounds = map.getExtent();
+
+            var txMin = xpoint2tile(bounds.left, zoom);
+            var txMax = xpoint2tile(bounds.right, zoom);
+
+            var tyMin = ypoint2tile(bounds.bottom, zoom);
+            var tyMax = ypoint2tile(bounds.top, zoom);
+
+            imagesToDownloadQueue.concat(this.getAllImages(zoom, txMin, txMax, tyMin, tyMax, type));
+
+        }
+        return imagesToDownloadQueue;
+    },
+
+    /**
+     * get tiles details in array for OSM
+     * @param min
+     * @param max
+     */
+    saveMapOSM: function(min, max){
+        var imagesToDownloadQueue = [];
+
+        var xpoint2tile = long2tile,
+        ypoint2tile = lat2tile,
+        projections = map.getProjections(),
+        type = 'png';
+        map.setBaseMapFullURL("http://a.tile.openstreetmap.org");
+        var bounds = map.getExtent().transform(projections[0], projections[1]);
+
+        for(var zoom = min; zoom <= max; zoom++) {
+            var txMin = xpoint2tile(bounds.left, zoom);
+            var txMax = xpoint2tile(bounds.right, zoom);
+
+            var tyMax = ypoint2tile(bounds.bottom, zoom);
+            var tyMin = ypoint2tile(bounds.top, zoom);
+
+            imagesToDownloadQueue.concat(this.getAllImages(zoom, txMin, txMax, tyMin, tyMax, type));
+        }
+        return imagesToDownloadQueue;
+    },
+
+    /**
+     * save tiles details in array
+     * @param zoom
+     * @param txMin
+     * @param txMax
+     * @param tyMin
+     * @param tyMax
+     * @param type
+     */
+    getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
+        console.log(zoom, txMin, txMax, tyMin, tyMax, type)
+        var imagesToDownloadQueue = [];
+        for (var tx = txMin; tx <= txMax; tx++) {
+            for (var ty = tyMin; ty <= tyMax; ty++) {
+                var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+                console.log(url)
+
+                var imageInfo = {
+                    url: url,
+                    zoom: zoom,
+                    tx:tx,
+                    ty:ty,
+                    type:type
+                };
+                imagesToDownloadQueue.push(imageInfo);
+            }
+        }
+        return imagesToDownloadQueue;
     },
 
     /**
