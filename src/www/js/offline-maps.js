@@ -33,7 +33,7 @@ DAMAGE.
 
 define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
-    cache.setBase(utils.getMapSettings()['baseLayer']);
+    //cache.setBase(utils.getMapSettings()['baseLayer']);
 
     /**
      * Map with local storage caching.
@@ -99,11 +99,17 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
             // or getURL. Using getURLasync was causing the application to freeze,
             // often getting a ANR
             this.async = typeof(webdb) !== 'undefined';
-            this.url = [
-                'http://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                'http://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                'http://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
-            ];
+            this.type = 'png';
+            if (options.url === "undefined/${z}/${x}/${y}.png") {
+                this.url = [
+                    'http://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                    'http://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                    'http://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
+                ];
+            }
+            else{
+                this.url = [options.url];
+            }
 
             OpenLayers.Layer.OSM.prototype.initialize.apply(
                 this,

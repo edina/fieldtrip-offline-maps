@@ -82,6 +82,30 @@ define(['map', 'utils'], function(map, utils){
         return tn
     };
 
+    var getBoundsFromZoom = function(bounds, zoom){
+        if(map_base == 'osm'){
+            var xpoint2tile = long2tile,
+            ypoint2tile = lat2tile,
+            projections = map.getProjections(),
+            tmp_bounds = bounds.clone();
+            tmp_bounds.transform(projections[0], projections[1]);
+            map.setBaseMapFullURL("http://a.tile.openstreetmap.org");
+            var txMin = xpoint2tile(tmp_bounds.left, zoom);
+            var txMax = xpoint2tile(tmp_bounds.right, zoom);
+            var tyMax = ypoint2tile(tmp_bounds.bottom, zoom);
+            var tyMin = ypoint2tile(tmp_bounds.top, zoom);
+        }else{
+            var xpoint2tile = easting2tile;
+            var ypoint2tile = northing2tile;
+            var txMin = xpoint2tile(bounds.left, zoom);
+            var txMax = xpoint2tile(bounds.right, zoom);
+            var tyMin = ypoint2tile(bounds.bottom, zoom);
+            var tyMax = ypoint2tile(bounds.top, zoom);
+        }
+
+        return {'txMin': txMin, 'txMax': txMax, 'tyMin': tyMin, 'tyMax': tyMax};
+    };
+
     /**
      * Convert northing to TMS tile number.
      * @param northing
@@ -269,6 +293,32 @@ var _base = {
     },
 
     /**
+     * save tiles details in array
+     * @param zoom
+     * @param txMin
+     * @param txMax
+     * @param tyMin
+     * @param tyMax
+     * @param type
+     */
+    getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
+        for (var tx = txMin; tx <= txMax; tx++) {
+            for (var ty = tyMin; ty <= tyMax; ty++) {
+                var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+
+                var imageInfo = {
+                    url: url,
+                    zoom: zoom,
+                    tx:tx,
+                    ty:ty,
+                    type:type
+                };
+                imagesToDownloadQueue.push(imageInfo);
+            }
+        }
+    },
+
+    /**
      * Get saved map details.
      * @param name The name of the saved map.
      * @return Saved map details object.
@@ -388,9 +438,8 @@ var _base = {
     saveMap: function(mapName, min, max){
         mapName = utils.santiseForFilename(mapName);
         var success = true;
-        var dlSize = this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE;
 
-        if(dlSize > MAX_CACHE){
+        if(this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE > MAX_CACHE){
             alert('Download size too large');
             success = false;
         }
@@ -401,21 +450,23 @@ var _base = {
                 count = 0;
                 var layer = map.getBaseLayer();
 
-                noOfTiles = dlSize / this.AV_TILE_SIZE;
+                var bounds = map.getExtent();
+                noOfTiles = this.totalNumberOfTilesToDownload(bounds, min, max);
 
                 utils.inform("Saving ...");
 
                 // store cached map details
                 var details = {
                     'poi': map.getCentre(),
-                    'bounds': map.getExtent(),
+                    'bounds': bounds,
                     'images': []
                 }
 
-                if(map_base === 'osm'){
-                    imagesToDownloadQueue = this.saveMapOSM(min, max);
-                }else{
-                    imagesToDownloadQueue = this.saveMapFGB(min, max);
+                imagesToDownloadQueue = [];
+
+                for(var zoom = min; zoom <= max; zoom++) {
+                    var calcBounds = getBoundsFromZoom(bounds, zoom);
+                    this.getAllImages(zoom, calcBounds.txMin, calcBounds.txMax, calcBounds.tyMin, calcBounds.tyMax, map.getTileFileType());
                 }
 
                 var downloadImageThreads = 8;
@@ -432,90 +483,6 @@ var _base = {
         }
 
         return success;
-    },
-
-    /**
-     * get tiles details in array for FGB
-     * @param min
-     * @param max
-     */
-    saveMapFGB: function(min, max){
-        var imagesToDownloadQueue = [];
-
-        var type = map.getTileFileType(),
-        xpoint2tile = easting2tile,
-        ypoint2tile = northing2tile;
-
-        for(var zoom = min; zoom <= max; zoom++) {
-            var bounds = map.getExtent();
-
-            var txMin = xpoint2tile(bounds.left, zoom);
-            var txMax = xpoint2tile(bounds.right, zoom);
-
-            var tyMin = ypoint2tile(bounds.bottom, zoom);
-            var tyMax = ypoint2tile(bounds.top, zoom);
-
-            imagesToDownloadQueue.concat(this.getAllImages(zoom, txMin, txMax, tyMin, tyMax, type));
-
-        }
-        return imagesToDownloadQueue;
-    },
-
-    /**
-     * get tiles details in array for OSM
-     * @param min
-     * @param max
-     */
-    saveMapOSM: function(min, max){
-        var imagesToDownloadQueue = [];
-
-        var xpoint2tile = long2tile,
-        ypoint2tile = lat2tile,
-        projections = map.getProjections(),
-        type = 'png';
-        map.setBaseMapFullURL("http://a.tile.openstreetmap.org");
-        var bounds = map.getExtent().transform(projections[0], projections[1]);
-
-        for(var zoom = min; zoom <= max; zoom++) {
-            var txMin = xpoint2tile(bounds.left, zoom);
-            var txMax = xpoint2tile(bounds.right, zoom);
-
-            var tyMax = ypoint2tile(bounds.bottom, zoom);
-            var tyMin = ypoint2tile(bounds.top, zoom);
-
-            imagesToDownloadQueue.concat(this.getAllImages(zoom, txMin, txMax, tyMin, tyMax, type));
-        }
-        return imagesToDownloadQueue;
-    },
-
-    /**
-     * save tiles details in array
-     * @param zoom
-     * @param txMin
-     * @param txMax
-     * @param tyMin
-     * @param tyMax
-     * @param type
-     */
-    getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
-        console.log(zoom, txMin, txMax, tyMin, tyMax, type)
-        var imagesToDownloadQueue = [];
-        for (var tx = txMin; tx <= txMax; tx++) {
-            for (var ty = tyMin; ty <= tyMax; ty++) {
-                var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
-                console.log(url)
-
-                var imageInfo = {
-                    url: url,
-                    zoom: zoom,
-                    tx:tx,
-                    ty:ty,
-                    type:type
-                };
-                imagesToDownloadQueue.push(imageInfo);
-            }
-        }
-        return imagesToDownloadQueue;
     },
 
     /**
@@ -548,39 +515,19 @@ var _base = {
         }
     },
 
-
-    // !!!!!!!!!!!!! TODO need to do this for mercator !!!!!!!!!!!!!
     /**
      * Count number of tile to cache.
      * @param min Start zoom level.
      * @param max End zoom level.
      */
-    totalNumberOfTilesToDownload: function(min, max){
+    totalNumberOfTilesToDownload: function(bounds, min, max){
         var totalTileToDownload = 0;
 
-        var bounds = map.getExtent();
         if(bounds !== null){
-            var xpoint2tile, ypoint2tile;
-            if(map_base === 'osm'){
-                xpoint2tile = long2tile;
-                ypoint2tile = lat2tile;
-                var projections = map.getProjections();
-                bounds = bounds.transform(projections[0], projections[1]);
-            }else{
-                xpoint2tile = easting2tile;
-                ypoint2tile = northing2tile;
-            }
-
             for (var zoom = min; zoom <= max; zoom++){
-                var txMin = xpoint2tile(bounds.left, zoom);
-                var txMax = xpoint2tile(bounds.right, zoom);
-
-                var tyMin = ypoint2tile(bounds.bottom, zoom);
-                var tyMax = ypoint2tile(bounds.top, zoom);
-
-                var ntx = txMax - txMin + 1;
-                var nty = tyMax - tyMin + 1;
-
+                var calcBounds = getBoundsFromZoom(bounds, zoom);
+                var ntx = calcBounds["txMax"] - calcBounds["txMin"] + 1;
+                var nty = calcBounds["tyMax"] - calcBounds["tyMin"] + 1;
                 totalTileToDownload += Math.abs((ntx * nty));
             }
         }
@@ -589,7 +536,7 @@ var _base = {
         }
 
         return totalTileToDownload;
-    },
+    }
 }
 
 var _this = {};
