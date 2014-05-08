@@ -301,10 +301,14 @@ var _base = {
      * @param type
      */
     getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
-        console.log(utils.getMapServerUrl())
+        if(map_base == 'osm'){
+            var base_url = utils.getMapServerUrl();
+        }else{
+            var base_url = map.getBaseMapFullURL();
+        }
         for (var tx = txMin; tx <= txMax; tx++) {
             for (var ty = tyMin; ty <= tyMax; ty++) {
-                var url = utils.getMapServerUrl() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+                var url = base_url + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
 
                 var imageInfo = {
                     url: url,
