@@ -33,7 +33,6 @@ DAMAGE.
 
 define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
-    //cache.setBase(utils.getMapSettings()['baseLayer']);
 
     /**
      * Map with local storage caching.
@@ -47,7 +46,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
         }
         else{
             layer = new OSMMapWithLocalStorage({
-                url: utils.getMapServerUrl()+'/${z}/${x}/${y}.png'
+                url: url+'/${z}/${x}/${y}.png'
             });
         }
 
@@ -108,7 +107,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
                 ];
             }
             else{
-                this.url = [options.url];
+                this.url = [
+                    options.url,
+                    options.url.replace("a.", "b."),
+                    options.url.replace("a.", "c.")
+                ];
             }
 
             OpenLayers.Layer.OSM.prototype.initialize.apply(
@@ -397,16 +400,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 
     $(document).on('change', '#settings-mapserver-url', function(){
-        if(utils.isMobileDevice()){
-            map.switchBaseLayer(
-                getMapWithLocalStorage(
-                    $('#settings-mapserver-url option:selected').val())
-            );
-        }
-        else{
-            utils.inform("Switching doesn't work on the desktop.");
-        }
+        map.switchBaseLayer(
+            getMapWithLocalStorage(
+                $('#settings-mapserver-url option:selected').val())
+        );
     });
 
-    map.switchBaseLayer(getMapWithLocalStorage());
+    map.switchBaseLayer(getMapWithLocalStorage(utils.getMapServerUrl()));
 });

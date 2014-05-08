@@ -40,7 +40,7 @@ define(['map', 'utils'], function(map, utils){
     var count = 0;
     var noOfTiles = 0;
     var imagesToDownloadQueue;
-    var map_base;
+    var map_base = utils.getMapSettings()['baseLayer'];
 
     /**
      * Single image download is complete.
@@ -89,7 +89,6 @@ define(['map', 'utils'], function(map, utils){
             projections = map.getProjections(),
             tmp_bounds = bounds.clone();
             tmp_bounds.transform(projections[0], projections[1]);
-            map.setBaseMapFullURL("http://a.tile.openstreetmap.org");
             var txMin = xpoint2tile(tmp_bounds.left, zoom);
             var txMax = xpoint2tile(tmp_bounds.right, zoom);
             var tyMax = ypoint2tile(tmp_bounds.bottom, zoom);
@@ -302,9 +301,10 @@ var _base = {
      * @param type
      */
     getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
+        console.log(utils.getMapServerUrl())
         for (var tx = txMin; tx <= txMax; tx++) {
             for (var ty = tyMin; ty <= tyMax; ty++) {
-                var url = map.getBaseMapFullURL() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+                var url = utils.getMapServerUrl() + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
 
                 var imageInfo = {
                     url: url,
@@ -451,7 +451,7 @@ var _base = {
                 var layer = map.getBaseLayer();
 
                 var bounds = map.getExtent();
-                noOfTiles = this.totalNumberOfTilesToDownload(bounds, min, max);
+                noOfTiles = this.totalNumberOfTilesToDownload(min, max);
 
                 utils.inform("Saving ...");
 
@@ -486,13 +486,6 @@ var _base = {
     },
 
     /**
-     * Set the map_base
-     */
-    setBase: function(val){
-        map_base = val;
-    },
-
-    /**
      * Update cache page stats.
      * @param min minimum zoom level
      * @param max maximum zoom level
@@ -520,8 +513,9 @@ var _base = {
      * @param min Start zoom level.
      * @param max End zoom level.
      */
-    totalNumberOfTilesToDownload: function(bounds, min, max){
+    totalNumberOfTilesToDownload: function(min, max){
         var totalTileToDownload = 0;
+        var bounds = map.getExtent();
 
         if(bounds !== null){
             for (var zoom = min; zoom <= max; zoom++){
