@@ -31,6 +31,8 @@ DAMAGE.
 
 "use strict";
 
+/* global FileTransfer, Image, webdb */
+
 define(['map', 'utils'], function(map, utils){
     var SAVED_MAPS = 'saved-maps-v2';
     var MAX_CACHE = 52428800; // per download - 50 MB
@@ -83,23 +85,24 @@ define(['map', 'utils'], function(map, utils){
     };
 
     var getBoundsFromZoom = function(bounds, zoom){
+        var xpoint2tile, ypoint2tile, txMin, txMax, tyMin, tyMax;
         if(mapBase == 'osm'){
-            var xpoint2tile = long2tile,
-            ypoint2tile = lat2tile,
-            projections = map.getProjections(),
+            xpoint2tile = long2tile;
+            ypoint2tile = lat2tile;
+            var projections = map.getProjections(),
             tmpBounds = bounds.clone();
             tmpBounds.transform(projections[0], projections[1]);
-            var txMin = xpoint2tile(tmpBounds.left, zoom);
-            var txMax = xpoint2tile(tmpBounds.right, zoom);
-            var tyMax = ypoint2tile(tmpBounds.bottom, zoom);
-            var tyMin = ypoint2tile(tmpBounds.top, zoom);
+            txMin = xpoint2tile(tmpBounds.left, zoom);
+            txMax = xpoint2tile(tmpBounds.right, zoom);
+            tyMax = ypoint2tile(tmpBounds.bottom, zoom);
+            tyMin = ypoint2tile(tmpBounds.top, zoom);
         }else{
-            var xpoint2tile = easting2tile,
+            xpoint2tile = easting2tile;
             ypoint2tile = northing2tile;
-            var txMin = xpoint2tile(bounds.left, zoom);
-            var txMax = xpoint2tile(bounds.right, zoom);
-            var tyMin = ypoint2tile(bounds.bottom, zoom);
-            var tyMax = ypoint2tile(bounds.top, zoom);
+            txMin = xpoint2tile(bounds.left, zoom);
+            txMax = xpoint2tile(bounds.right, zoom);
+            tyMin = ypoint2tile(bounds.bottom, zoom);
+            tyMax = ypoint2tile(bounds.top, zoom);
         }
 
         return {'txMin': txMin, 'txMax': txMax, 'tyMin': tyMin, 'tyMax': tyMax};
@@ -301,14 +304,15 @@ var _base = {
      * @param type
      */
     getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
-        if(map_base == 'osm'){
-            var base_url = utils.getMapServerUrl();
+        var baseUrl;
+        if(mapBase == 'osm'){
+            baseUrl = utils.getMapServerUrl();
         }else{
-            var base_url = map.getBaseMapFullURL();
+            baseUrl = map.getBaseMapFullURL();
         }
         for (var tx = txMin; tx <= txMax; tx++) {
             for (var ty = tyMin; ty <= tyMax; ty++) {
-                var url = base_url + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+                var url = baseUrl + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
 
                 var imageInfo = {
                     url: url,
@@ -328,7 +332,7 @@ var _base = {
      * @return Saved map details object.
      */
     getSavedMapDetails: function(name){
-        var mapDetails = undefined;
+        var mapDetails;
         var maps = this.getSavedMaps();
         if(maps){
             mapDetails = maps[name];
@@ -343,7 +347,7 @@ var _base = {
      */
     getSavedMaps: function(){
         var maps;
-        var obj = localStorage.getItem(SAVED_MAPS)
+        var obj = localStorage.getItem(SAVED_MAPS);
 
         if(obj){
             try{
@@ -418,7 +422,7 @@ var _base = {
      */
     saveImage: function(url, zoom, tx, ty, type, mapName){
         // TODO - check if image has been previously downloaded
-        var img = new Image()
+        var img = new Image();
         img.crossOrigin = "anonymous"; // no credentials flag. Same as img.crossOrigin='anonymous'
         img.src = url;
 
@@ -444,7 +448,7 @@ var _base = {
         var success = true;
 
         if(this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE > MAX_CACHE){
-            alert('Download size too large');
+            notification.alert('Download size too large');
             success = false;
         }
         else{
@@ -460,11 +464,11 @@ var _base = {
                 utils.inform("Saving ...");
 
                 // store cached map details
-                var details = {
+                details = {
                     'poi': map.getCentre(),
                     'bounds': bounds,
                     'images': []
-                }
+                };
 
                 imagesToDownloadQueue = [];
 
@@ -481,7 +485,7 @@ var _base = {
                 setSavedMapDetails(mapName, details);
             }
             else{
-                utils.inform(name + ' is already defined');
+                utils.inform(mapName + ' is already defined');
                 success = false;
             }
         }
@@ -524,8 +528,8 @@ var _base = {
         if(bounds !== null){
             for (var zoom = min; zoom <= max; zoom++){
                 var calcBounds = getBoundsFromZoom(bounds, zoom);
-                var ntx = calcBounds["txMax"] - calcBounds["txMin"] + 1;
-                var nty = calcBounds["tyMax"] - calcBounds["tyMin"] + 1;
+                var ntx = calcBounds.txMax - calcBounds.txMin + 1;
+                var nty = calcBounds.tyMax - calcBounds.tyMin + 1;
                 totalTileToDownload += Math.abs((ntx * nty));
             }
         }
@@ -535,7 +539,7 @@ var _base = {
 
         return totalTileToDownload;
     }
-}
+};
 
 var _this = {};
 
@@ -557,7 +561,7 @@ var _fs = {
                     this.preventGalleryScanning(cacheDir);
                 }, this),
                 function(){
-                    alert('Failed finding root directory. Caching will be disabled.');
+                    notification.alert('Failed finding root directory. Caching will be disabled.');
                 });
         }, this));
     },
@@ -568,19 +572,21 @@ var _fs = {
     clearCache: function(callback){
         this.cacheDir.createReader().readEntries(
             $.proxy(function(entries){
+                var fileRemove = function(file){
+                    file.remove();
+                };
+                var fileError = function(error){
+                    console.error('Failed to delete image:' + error);
+                };
                 for (var i = 0; i < entries.length; i++) {
                     this.cacheDir.getFile(entries[i].name,
                                           {create: false, exclusive: false},
-                                          function(file){
-                                              file.remove();
-                                          },
-                                          function(error){
-                                              console.error('Failed to delete image:' + error);
-                                          });
+                                          fileRemove,
+                                          fileError);
                 }
             }, this),
             function(error){
-                alert('Problem reading cache directory: ' + error);
+                notification.alert('Problem reading cache directory: ' + error);
             }
         );
     },
@@ -598,24 +604,23 @@ var _fs = {
             path = path.substr(7);
         }
 
-        var localMapDir = path + "/" + name + "/" ;
+        var localMapDir = path + "/" + mapName + "/" ;
         var onGetDirectorySuccess = function(directory){
             var success = function (parent) {
                 webdb.deleteMap(mapName);
-            }
+            };
 
             var fail = function(error) {
                 console.error("Remove Recursively Failed" + error.code);
-
-            }
+            };
 
             directory.removeRecursively(success, fail);
-        }
+        };
 
         var onGetDirectoryFail = function (error) {
             console.error("*********** problem getting map tiles dir *********");
             console.error(error.code);
-        }
+        };
 
         this.cacheDir.getDirectory(
             localMapDir,
@@ -661,7 +666,6 @@ var _fs = {
 
         // remove file:// from cachedir fullpath
         var path = this.cacheDir.toURL();
-        console.log(path)
         //not sure if it's needed in cordova 3
         //if(path.slice(0,7) === "file://"){
         //    path = path.substr(7);

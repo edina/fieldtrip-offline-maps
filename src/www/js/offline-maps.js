@@ -31,6 +31,8 @@ DAMAGE.
 
 "use strict";
 
+/* global Connection */
+
 define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
 
@@ -41,7 +43,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
      */
     var getMapWithLocalStorage = function(url){
         var layer;
-        if(url == undefined){
+        if(url === undefined){
             url = utils.getMapSettings().url;
         }
         if(map.isBaseLayerTMS()){
@@ -149,6 +151,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
         if(maps){
             // build saved maps list
             $.each(maps, function(index, value){
+                /*jshint multistr: true */
                 $('#saved-maps-list-list').append(
                     '<li><fieldset class="ui-grid-b"> \
                        <div class="ui-block-a">\
