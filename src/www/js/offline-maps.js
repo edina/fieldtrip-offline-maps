@@ -41,6 +41,9 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
      */
     var getMapWithLocalStorage = function(url){
         var layer;
+        if(url == undefined){
+            url = utils.getMapSettings().url;
+        }
         if(map.isBaseLayerTMS()){
             layer = new FGBMapWithLocalStorage({url: map.getTMSURL(url)});
         }

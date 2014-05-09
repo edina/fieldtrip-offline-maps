@@ -40,7 +40,7 @@ define(['map', 'utils'], function(map, utils){
     var count = 0;
     var noOfTiles = 0;
     var imagesToDownloadQueue;
-    var map_base = utils.getMapSettings()['baseLayer'];
+    var mapBase = utils.getMapSettings().baseLayer;
 
     /**
      * Single image download is complete.
@@ -59,7 +59,7 @@ define(['map', 'utils'], function(map, utils){
 
         var callback = function(){   //get the next image
             saveImageSynchronous(mapName);
-        }
+        };
 
         if(url){
             webdb.insertCachedTilePath(x, y, z, tileData, mapName, callback);
@@ -79,23 +79,23 @@ define(['map', 'utils'], function(map, utils){
             tn = Math.floor(easting / (caps.tileFormat.width * caps.tileSet[zoom]));
         }
 
-        return tn
+        return tn;
     };
 
     var getBoundsFromZoom = function(bounds, zoom){
-        if(map_base == 'osm'){
+        if(mapBase == 'osm'){
             var xpoint2tile = long2tile,
             ypoint2tile = lat2tile,
             projections = map.getProjections(),
-            tmp_bounds = bounds.clone();
-            tmp_bounds.transform(projections[0], projections[1]);
-            var txMin = xpoint2tile(tmp_bounds.left, zoom);
-            var txMax = xpoint2tile(tmp_bounds.right, zoom);
-            var tyMax = ypoint2tile(tmp_bounds.bottom, zoom);
-            var tyMin = ypoint2tile(tmp_bounds.top, zoom);
+            tmpBounds = bounds.clone();
+            tmpBounds.transform(projections[0], projections[1]);
+            var txMin = xpoint2tile(tmpBounds.left, zoom);
+            var txMax = xpoint2tile(tmpBounds.right, zoom);
+            var tyMax = ypoint2tile(tmpBounds.bottom, zoom);
+            var tyMin = ypoint2tile(tmpBounds.top, zoom);
         }else{
-            var xpoint2tile = easting2tile;
-            var ypoint2tile = northing2tile;
+            var xpoint2tile = easting2tile,
+            ypoint2tile = northing2tile;
             var txMin = xpoint2tile(bounds.left, zoom);
             var txMax = xpoint2tile(bounds.right, zoom);
             var tyMin = ypoint2tile(bounds.bottom, zoom);
@@ -660,10 +660,12 @@ var _fs = {
         var subDirectory = Math.ceil(count / maxNumberOfFilesPerDir);
 
         // remove file:// from cachedir fullpath
-        var path = this.cacheDir.fullPath;
-        if(path.slice(0,7) === "file://"){
-            path = path.substr(7);
-        }
+        var path = this.cacheDir.toURL();
+        console.log(path)
+        //not sure if it's needed in cordova 3
+        //if(path.slice(0,7) === "file://"){
+        //    path = path.substr(7);
+        //}
 
         var localFileName = path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
         console.debug("download " + url);
