@@ -448,7 +448,7 @@ var _base = {
         var success = true;
 
         if(this.totalNumberOfTilesToDownload(min, max) * this.AV_TILE_SIZE > MAX_CACHE){
-            notification.alert('Download size too large');
+            navigator.notification.alert('Download size too large');
             success = false;
         }
         else{
@@ -561,7 +561,7 @@ var _fs = {
                     this.preventGalleryScanning(cacheDir);
                 }, this),
                 function(){
-                    notification.alert('Failed finding root directory. Caching will be disabled.');
+                    navigator.notification.alert('Failed finding root directory. Caching will be disabled.');
                 });
         }, this));
     },
@@ -586,7 +586,7 @@ var _fs = {
                 }
             }, this),
             function(error){
-                notification.alert('Problem reading cache directory: ' + error);
+                navigator.notification.alert('Problem reading cache directory: ' + error);
             }
         );
     },
