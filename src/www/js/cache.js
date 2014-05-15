@@ -31,7 +31,7 @@ DAMAGE.
 
 "use strict";
 
-/* global FileTransfer, Image, webdb */
+/* global Image, webdb */
 
 define(['map', 'utils'], function(map, utils){
     var SAVED_MAPS = 'saved-maps-v2';
