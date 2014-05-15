@@ -49,7 +49,7 @@ define(['map', 'utils'], function(map, utils){
      * @param url Remote Image URL.
      * @param value Local Image.
      */
-    var downloadComplete = function(url, tileData, x, y, z, mapName){
+    var downloadComplete = function(options){
         ++count;
 
         var percent = ((count / noOfTiles) * 100).toFixed(0);
@@ -60,11 +60,11 @@ define(['map', 'utils'], function(map, utils){
         }
 
         var callback = function(){   //get the next image
-            saveImageSynchronous(mapName);
+            saveImageSynchronous(options.mapName);
         };
 
-        if(url){
-            webdb.insertCachedTilePath(x, y, z, tileData, mapName, callback);
+        if(options.url){
+            webdb.insertCachedTilePath(options.x, options.y, options.z, options.tileData, options.mapName, callback);
         }
     };
 
@@ -240,12 +240,12 @@ define(['map', 'utils'], function(map, utils){
         if(imagesToDownloadQueue.length !== 0){
             var imageInfo = imagesToDownloadQueue.pop();
             if(imageInfo){
-                _this.saveImage(imageInfo.url,
-                                imageInfo.zoom,
-                                imageInfo.tx,
-                                imageInfo.ty,
-                                imageInfo.type,
-                                mapName);
+                _this.saveImage({'url': imageInfo.url,
+                                'z': imageInfo.zoom,
+                                'x': imageInfo.tx,
+                                'y': imageInfo.ty,
+                                'type': imageInfo.type,
+                                'mapName': mapName});
             }
         }
     };
@@ -303,23 +303,23 @@ var _base = {
      * @param tyMax
      * @param type
      */
-    getAllImages: function(zoom, txMin, txMax, tyMin, tyMax, type){
+    getAllImages: function(options){
         var baseUrl;
         if(mapBase == 'osm'){
             baseUrl = utils.getMapServerUrl();
         }else{
             baseUrl = map.getBaseMapFullURL();
         }
-        for (var tx = txMin; tx <= txMax; tx++) {
-            for (var ty = tyMin; ty <= tyMax; ty++) {
-                var url = baseUrl + '/' + zoom + '/' + tx + '/' + ty  + '.' + type;
+        for (var tx = options.txMin; tx <= options.txMax; tx++) {
+            for (var ty = options.tyMin; ty <= options.tyMax; ty++) {
+                var url = baseUrl + '/' + options.zoom + '/' + tx + '/' + ty  + '.' + options.type;
 
                 var imageInfo = {
                     url: url,
-                    zoom: zoom,
+                    zoom: options.zoom,
                     tx:tx,
                     ty:ty,
-                    type:type
+                    type:options.type
                 };
                 imagesToDownloadQueue.push(imageInfo);
             }
@@ -420,11 +420,11 @@ var _base = {
      * @param ty Tile ycoord.
      * @param type Image file type.
      */
-    saveImage: function(url, zoom, tx, ty, type, mapName){
+    saveImage: function(options){
         // TODO - check if image has been previously downloaded
         var img = new Image();
         img.crossOrigin = "anonymous"; // no credentials flag. Same as img.crossOrigin='anonymous'
-        img.src = url;
+        img.src = options.url;
 
         img.onload = $.proxy(function(event){
             var canvas = document.createElement("canvas");
@@ -433,7 +433,9 @@ var _base = {
             var ctx = canvas.getContext('2d');
             ctx.drawImage(event.target, 0, 0);
 
-            downloadComplete($(event.target).attr('src'), canvas.toDataURL(), tx, ty, zoom, mapName);
+            options.url = $(event.target).attr('src');
+            options.tileData = canvas.toDataURL();
+            downloadComplete(options);
         }, this);
     },
 
@@ -474,7 +476,12 @@ var _base = {
 
                 for(var zoom = min; zoom <= max; zoom++) {
                     var calcBounds = getBoundsFromZoom(bounds, zoom);
-                    this.getAllImages(zoom, calcBounds.txMin, calcBounds.txMax, calcBounds.tyMin, calcBounds.tyMax, map.getTileFileType());
+                    this.getAllImages({"zoom": zoom,
+                                      "txMin": calcBounds.txMin,
+                                      "txMax": calcBounds.txMax,
+                                      "tyMin": calcBounds.tyMin,
+                                      "tyMax": calcBounds.tyMax,
+                                      "type": map.getTileFileType()});
                 }
 
                 var downloadImageThreads = 8;
@@ -657,30 +664,35 @@ var _fs = {
      * @param ty Tile ycoord.
      * @param mapName.
      */
-    saveImage: function(url, zoom, tx, ty, type, mapName){
+    saveImage: function(options){
         var maxNumberOfFilesPerDir = 100;
-        var fileName = map.getStackType() + '_' + zoom +
-            '_' + tx + '_' +  ty + '.' + type;
+        var fileName = map.getStackType() + '_' + options.z +
+            '_' + options.x + '_' +  options.y + '.' + options.type;
 
         var subDirectory = Math.ceil(count / maxNumberOfFilesPerDir);
 
         // remove file:// from cachedir fullpath
-        var path = this.cacheDir.toURL();
+        var path = utils.getFilePath(this.cacheDir);
         //not sure if it's needed in cordova 3
         //if(path.slice(0,7) === "file://"){
         //    path = path.substr(7);
         //}
 
-        var localFileName = path + "/" + mapName +  "/" + subDirectory + "/" + fileName;
-        console.debug("download " + url);
+        var localFileName = path + "/" + options.mapName +  "/" + subDirectory + "/" + fileName;
+        console.debug("download " + options.url);
 
         var fileTransfer = new FileTransfer();
 
         fileTransfer.download(
-            url + utils.getLoggingParams(true),
+            options.url + utils.getLoggingParams(true),
             localFileName,
             function(entry){
-                downloadComplete(url, localFileName, tx, ty, zoom, mapName);
+                downloadComplete({'url': options.url,
+                                 'tileData': localFileName,
+                                 'x': options.x,
+                                 'y': options.y,
+                                 'z': options.z,
+                                 'mapName': options.mapName});
             },
             function(error) {
                 console.error("download error source " + error.source);
