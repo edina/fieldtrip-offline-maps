@@ -33,8 +33,8 @@ DAMAGE.
 
 /* global asyncTest, expect, ok, start, stop, test */
 
-define(['map', 'ui', 'utils', './cache'], function(// jshint ignore:line
-    map, ui, utils, cache) {
+define(['map', 'ui', 'utils', './cache', 'tests/systests'], function(// jshint ignore:line
+    map, ui, utils, cache, sys) {
 
 return {
 
@@ -128,6 +128,60 @@ unit: {
 sys:{
     run: function() {
         module("Offline Maps");
+
+        sys.asyncTest("Save Map", function(){
+            if(utils.isMobileDevice() || utils.isChrome()){
+                var savedMaps = cache.getSavedMaps();
+
+                if(savedMaps !== undefined){
+                    if(cache.getSavedMapsCount() === 3){
+                        // delete one of the maps
+                        $.each(cache.getSavedMaps(), function(name, map){
+                            console.debug("delete " + name);
+                            cache.deleteSavedMapDetails(name);
+                            return;
+                        });
+                    }
+                }
+                var mapCount = cache.getSavedMapsCount();
+
+                sys.changePageByFile('save-map.html', '#save-map', function(){
+                    ok(true, 'navigate to save map page');
+
+                    sys.clickAndTest({
+                        'id': '#save-map-buttons-ok',
+                        'test': function(){
+                            return $('#cache-controls').is(':visible');
+                        },
+                        'cb': function(success){
+                            ok(success, 'Save button');
+                            sys.clickAndTest({
+                                'id': '#cache-save-details-button-div a',
+                                'test': function(){
+                                    return $.mobile.activePage[0].id === 'save-map-name-dialog';
+                                },
+                                'cb': function(success){
+                                    ok(success, 'Map name dialog');
+                                    sys.clickAndTest({
+                                        'id': '#saved-map-name-dialog-btn',
+                                        'delay': 2500,
+                                        'poll': 1000,
+                                        'test': function(){
+                                            // test has passed when map count has been incremented
+                                            return (mapCount + 1)  === cache.getSavedMapsCount();
+                                        },
+                                        'cb': function(success){
+                                            ok(success, 'Save Map');
+                                            start();
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+        });
     }
 }
 
