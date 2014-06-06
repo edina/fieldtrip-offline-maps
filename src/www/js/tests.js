@@ -34,7 +34,7 @@ DAMAGE.
 /* global asyncTest, expect, ok, start, stop, test */
 
 define(['map', 'ui', 'utils', './cache', 'tests/systests'], function(// jshint ignore:line
-    map, ui, utils, cache, sys) {
+    map, ui, utils, cache, sts) {
 
 return {
 
@@ -47,7 +47,6 @@ unit: {
                 var MAP_NAME = "name-name";
                 expect( 2 );
                 var success = true;
-                console.log("*" + MAP_NAME);
                 cache.deleteSavedMapDetails(MAP_NAME);
                 //stop();
                 setTimeout(function(){
@@ -55,7 +54,6 @@ unit: {
                     //check local storage
                     var maps = cache.getSavedMaps() || {};
                     ok(!(maps[MAP_NAME]), "Map should not be in localStorage" );
-                    console.log("*");
                     start();
                 }, 2000);
             });
@@ -83,14 +81,13 @@ unit: {
                     var tileExists = false;
 
                     function fileExists(fileEntry){
-                        console.log("File " + fileEntry.fullPath + " exists!");
                         tileExists = true;
                     }
                     function fileDoesNotExist(){
-                        console.log("file does not exist");
+                        console.debug("file does not exist");
                     }
                     function getFSFail(evt) {
-                        console.log(evt.target.error.code);
+                        console.debug(evt.target.error.code);
                     }
 
                     function checkIfFileExists(path){
@@ -106,7 +103,6 @@ unit: {
                     var callback = function(fileLocation){
                         url = fileLocation;
 
-                        console.log(fileLocation);
                         checkIfFileExists(fileLocation);
                     };
 
@@ -128,9 +124,8 @@ unit: {
 sys:{
     run: function() {
         module("Offline Maps");
-
-        sys.asyncTest("Save Map", function(){
-            if(utils.isMobileDevice() || utils.isChrome()){
+        if(utils.isMobileDevice() || utils.isChrome()){
+            asyncTest("Save Map", function(){
                 var savedMaps = cache.getSavedMaps();
 
                 if(savedMaps !== undefined){
@@ -145,24 +140,24 @@ sys:{
                 }
                 var mapCount = cache.getSavedMapsCount();
 
-                sys.changePageByFile('save-map.html', '#save-map', function(){
+                sts.changePageByFile('save-map.html', '#save-map-page', function(){
                     ok(true, 'navigate to save map page');
 
-                    sys.clickAndTest({
+                    sts.clickAndTest({
                         'id': '#save-map-buttons-ok',
                         'test': function(){
                             return $('#cache-controls').is(':visible');
                         },
                         'cb': function(success){
                             ok(success, 'Save button');
-                            sys.clickAndTest({
+                            sts.clickAndTest({
                                 'id': '#cache-save-details-button-div a',
                                 'test': function(){
                                     return $.mobile.activePage[0].id === 'save-map-name-dialog';
                                 },
                                 'cb': function(success){
                                     ok(success, 'Map name dialog');
-                                    sys.clickAndTest({
+                                    sts.clickAndTest({
                                         'id': '#saved-map-name-dialog-btn',
                                         'delay': 2500,
                                         'poll': 1000,
@@ -180,8 +175,8 @@ sys:{
                         }
                     });
                 });
-            }
-        });
+            });
+        }
     }
 }
 
