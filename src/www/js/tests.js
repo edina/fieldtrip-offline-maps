@@ -167,7 +167,7 @@ sys:{
                                         },
                                         'cb': function(success){
                                             ok(success, 'Save Map');
-                                            start();
+                                            sts.complete();
                                         }
                                     });
                                 }
