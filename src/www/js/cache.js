@@ -33,7 +33,7 @@ DAMAGE.
 
 /* global Image, webdb */
 
-define(['map', 'utils'], function(map, utils){
+define(['map', 'file', 'utils'], function(map, file, utils){
     var SAVED_MAPS = 'saved-maps-v2';
     var MAX_CACHE = 52428800; // per download - 50 MB
 
@@ -559,7 +559,7 @@ var _fs = {
         // create directory structure for caching
         // Changed to persistent cache for iphone3G issue with temp cache
         // http://community.phonegap.com/nitobi/topics/localfilesystem_persistent_and_ios_data_storage_guidelines
-        utils.getPersistentRoot($.proxy(function(dir){
+        file.getPersistentRoot($.proxy(function(dir){
             dir.getDirectory(
                 "mapcache",
                 {create: true, exclusive: false},
@@ -672,7 +672,7 @@ var _fs = {
         var subDirectory = Math.ceil(count / maxNumberOfFilesPerDir);
 
         // remove file:// from cachedir fullpath
-        var path = utils.getFilePath(this.cacheDir);
+        var path = file.getFilePath(this.cacheDir);
         //not sure if it's needed in cordova 3
         //if(path.slice(0,7) === "file://"){
         //    path = path.substr(7);
