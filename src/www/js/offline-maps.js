@@ -33,7 +33,8 @@ DAMAGE.
 
 /* global Connection */
 
-define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils, cache, webdb){
+define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignore:line
+    ui, map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
 
     /**
@@ -347,9 +348,9 @@ define(['ui', 'map', 'utils', './cache', './database'], function(ui, map, utils,
         // initialise slider values according to zoom level
         setSliderValues();
 
-        map.registerZoom(this, function(){
+        map.registerZoom(function(){
             setSliderValues();
-        });
+        }, this);
 
         $('#cache-save-details-zoom-level-but').val('1');
 
