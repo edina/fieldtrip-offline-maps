@@ -187,7 +187,7 @@ define(['map', 'file', 'utils'], function(map, file, utils){
                 }
 
                 pMap.zoomTo(options.zoom);
-                pMap.setCenter(map.getCentre().centre);
+                pMap.setCenter(map.getCentre());
 
                 return pMap;
             };
@@ -467,7 +467,10 @@ var _base = {
 
                 // store cached map details
                 details = {
-                    'poi': map.getCentre(),
+                    'poi': {
+                        'centre': map.getCentre(),
+                        'zoom': map.getZoom()
+                    },
                     'bounds': bounds,
                     'images': []
                 };
