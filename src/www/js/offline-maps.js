@@ -228,6 +228,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         $('#saved-maps-delete-popup-confirm').click($.proxy(function(event){
             // confirm map delete
             cache.deleteSavedMapDetails(selectedSavedMap.find('h3').text());
+            map.removeAllFeatures(savedMapsLayer);
             $('#saved-maps-delete-popup').popup("close");
             $(selectedSavedMap).slideUp('slow');
         }, this));
