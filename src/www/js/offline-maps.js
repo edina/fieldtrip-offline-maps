@@ -297,7 +297,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         // use pageremove on save map name screen otherwise attaching the
         // showPageLoadingMsg to the page is problematic
         $('#save-map-name-dialog').on(
-            'pageremove',
+            'pagecontainerremove',
             function(){
                 if(saveMap){
                     if(cache.saveMap($('#saved-map-name-dialog-text').val(),
@@ -396,18 +396,18 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         }
     }
 
-    $(document).on('pageinit', '#saved-maps-page', offlineMapsPage);
-    $(document).on('pageshow', '#saved-maps-page', function(){
+    $(document).on('pagecreate', '#saved-maps-page', offlineMapsPage);
+    $(document).on('pagecontainershow', '#saved-maps-page', function(){
         map.updateSize();
     });
 
-    $(document).on('pageshow', '#save-map-page', saveMapPage);
-    $(document).on('pageinit', '#save-map-name-dialog', saveMapNamePage);
+    $(document).on('pagecontainershow', '#save-map-page', saveMapPage);
+    $(document).on('pagecreate', '#save-map-name-dialog', saveMapNamePage);
 
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 
-    $(document).on('change', '#settings-mapserver-url', function(){
+    $('body').pagecontainer('change', '#settings-mapserver-url', function(){
         map.switchBaseLayer(
             getMapWithLocalStorage(
                 $('#settings-mapserver-url option:selected').val())
