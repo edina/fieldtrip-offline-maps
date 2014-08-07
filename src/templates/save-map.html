@@ -1,8 +1,8 @@
-<div id="save-map-page" class="map-page" data-role="page" data-theme="a">
+<div id="save-map-page" class="map-page" data-role="page" data-theme="b">
 
   {{header}}
 
-  <div data-role="content">
+  <div class="ui-content">
     <div id="save-map-map"></div>
 
     <div class="map-zoom-buttons">
@@ -36,24 +36,17 @@
         <h2>{{body["save-map"]}}</h2>
       </div>
       <div id="cache-save-details-button-div" class="ui-block-b">
-        <a data-role="button"
-           href="save-map-name.html">Save</a>
+        <a data-role="button" href="save-map-name.html">Save</a>
       </div>
       <div id="cache-save-details-text" class="ui-block-a">
         <label for="basic">{{body["zoom"]}}</label>
-        <input type="text" id="cache-save-details-zoom-level-but" value="1"  />
+        <input type="text" id="cache-save-details-zoom-level-but" value="1">
       </div>
       <div id="cache-save-details-text-stats" class="ui-block-b"></div>
       </div>
 
       <div id="cache-save-slider" class="ui-grid-solo">
-        <input type="range"
-               name="slider"
-               id="cache-slider"
-               value="8"
-               min="0"
-               max="16"
-               data-highlight="true" />
+        <input type="range" name="slider" id="cache-slider" value="8" min="0" max="16" data-highlight="true">
       </div>
     </div>
   </div>
