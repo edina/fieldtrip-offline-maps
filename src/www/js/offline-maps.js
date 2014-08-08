@@ -396,12 +396,12 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         }
     }
 
-    $(document).on('pagecreate', '#saved-maps-page', offlineMapsPage);
-    $(document).on('pagecontainershow', '#saved-maps-page', function(){
+    $(document).on('pagecreate', '#saved-maps-page',offlineMapsPage);
+    $(document).on('pageshow', '#saved-maps-page', function(){
         map.updateSize();
     });
 
-    $(document).on('pagecontainershow', '#save-map-page', saveMapPage);
+    $(document).on('pageshow', '#save-map-page', saveMapPage);
     $(document).on('pagecreate', '#save-map-name-dialog', saveMapNamePage);
 
     // adding stylesheet to beginning of head
