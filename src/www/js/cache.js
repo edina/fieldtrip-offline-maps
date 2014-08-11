@@ -56,7 +56,7 @@ define(['map', 'file', 'utils'], function(map, file, utils){
 
         utils.inform(percent  + '%');
         if(count === noOfTiles){
-            $.mobile.hidePageLoadingMsg();
+            $.mobile.loading('hide');
         }
 
         var callback = function(){   //get the next image
@@ -285,7 +285,7 @@ var _base = {
         var maps = this.getSavedMaps();
         if(maps){
             utils.inform('Deleting Tiles');
-            $.mobile.hidePageLoadingMsg();
+            $.mobile.loading('hide');
 
             delete maps[mapName];
             setSavedMap(maps);

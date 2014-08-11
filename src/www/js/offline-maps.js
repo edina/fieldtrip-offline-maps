@@ -296,17 +296,14 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
 
         // use pageremove on save map name screen otherwise attaching the
         // showPageLoadingMsg to the page is problematic
-        $('#save-map-name-dialog').on(
-            'pagecontainerremove',
-            function(){
-                if(saveMap){
-                    if(cache.saveMap($('#saved-map-name-dialog-text').val(),
-                                     map.getZoomLevels().current,
-                                     $('#saved-map-name-dialog-save-to').val())){
-                    }
+        $(document).on('pageremove', '#save-map-name-dialog', function(){
+            if(saveMap){
+                if(cache.saveMap($('#saved-map-name-dialog-text').val(),
+                                 map.getZoomLevels().current,
+                                 $('#saved-map-name-dialog-save-to').val())){
                 }
             }
-        );
+        });
     };
 
     /**
@@ -397,11 +394,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     }
 
     $(document).on('pagecreate', '#saved-maps-page',offlineMapsPage);
-    $(document).on('pageshow', '#saved-maps-page', function(){
+    $(document).on('_pageshow', '#saved-maps-page', function(){
         map.updateSize();
     });
 
-    $(document).on('pageshow', '#save-map-page', saveMapPage);
+    $(document).on('_pageshow', '#save-map-page', saveMapPage);
     $(document).on('pagecreate', '#save-map-name-dialog', saveMapNamePage);
 
     // adding stylesheet to beginning of head
