@@ -290,20 +290,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         $('#saved-map-name-dialog-text').val(new Date().toLocaleString().substr(0, 24));
         $('#saved-map-name-dialog-save-to').val($("#cache-slider").val());
         $('#saved-map-name-dialog-btn').click($.proxy(function(){
-            $('.ui-dialog').dialog('close');
-            saveMap = true;
-        }, this));
-
-        // use pageremove on save map name screen otherwise attaching the
-        // showPageLoadingMsg to the page is problematic
-        $(document).on('pageremove', '#save-map-name-dialog', function(){
-            if(saveMap){
-                if(cache.saveMap($('#saved-map-name-dialog-text').val(),
+            $('#save-map-name-dialog').popup('close');
+            cache.saveMap($('#saved-map-name-dialog-text').val(),
                                  map.getZoomLevels().current,
-                                 $('#saved-map-name-dialog-save-to').val())){
-                }
-            }
-        });
+                                 $('#saved-map-name-dialog-save-to').val());
+        }, this));
     };
 
     /**
@@ -399,7 +390,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     });
 
     $(document).on('_pageshow', '#save-map-page', saveMapPage);
-    $(document).on('pagecreate', '#save-map-name-dialog', saveMapNamePage);
+    $(document).on('popupbeforeposition', '#save-map-name-dialog', saveMapNamePage);
 
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');

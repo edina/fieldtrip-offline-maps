@@ -36,7 +36,7 @@
         <h2>{{body["save-map"]}}</h2>
       </div>
       <div id="cache-save-details-button-div" class="ui-block-b">
-        <a data-role="button" href="save-map-name.html">Save</a>
+        <a data-role="button" data-rel="popup" href="#save-map-name-dialog" data-position-to="window">Save</a>
       </div>
       <div id="cache-save-details-text" class="ui-block-a">
         <label for="basic">{{body["zoom"]}}</label>
@@ -49,6 +49,7 @@
         <input type="range" name="slider" id="cache-slider" value="8" min="0" max="16" data-highlight="true">
       </div>
     </div>
+    {{popups}}
   </div>
 
   {{footer}}

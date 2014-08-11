@@ -211,14 +211,14 @@
     z-index: 1;
 }
 
-#save-map-name-dialog [data-role="content"] {
+/*#save-map-name-dialog [data-role="content"] {
     color: #2c3f62;
     background-color: white;
 }
 
 #save-map-name-dialog h1{
     width: 80%;
-}
+}*/
 
 #saved-maps-list-popup{
     min-width: 12em;

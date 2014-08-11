@@ -15,5 +15,15 @@
         "save-map": "Save Map (use offline)",
         "save": "Save",
         "zoom": "Zoom Levels"
+    },
+    "popups": {
+        "save":{
+            "template": "save-map-name-popup.html",
+            "data":{
+                "title": "Saved Map Name",
+                "text": "Enter map name",
+                "save": "Save"
+            }
+        }
     }
 }
