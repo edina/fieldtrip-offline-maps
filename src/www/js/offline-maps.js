@@ -38,6 +38,24 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     var MAX_NO_OF_SAVED_MAPS = 3;
 
     /**
+     * Enable or disable que download button if the limit of saved maps
+     * has been reached
+     */
+    var checkDownloadLimit = function(){
+        if(cache.getSavedMapsCount() < MAX_NO_OF_SAVED_MAPS){
+            $('#save-map-buttons-ok').removeClass('ui-disabled');
+        }
+        else{
+            $('#save-map-buttons-ok').addClass('ui-disabled');
+
+            setTimeout(function(){
+                utils.inform('You have reached the maximum number of saved maps.');
+            }, 1000);
+        }
+    };
+
+
+    /**
      * Map with local storage caching.
      * @params options:
      *   url - TMS URL
@@ -289,11 +307,19 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
 
         $('#saved-map-name-dialog-text').val(new Date().toLocaleString().substr(0, 24));
         $('#saved-map-name-dialog-save-to').val($("#cache-slider").val());
-        $('#saved-map-name-dialog-btn').click($.proxy(function(){
+        $('#saved-map-name-dialog-btn').on('tap', $.proxy(function(event){
             $('#save-map-name-dialog').popup('close');
+            $('#cache-controls').hide();
             cache.saveMap($('#saved-map-name-dialog-text').val(),
                                  map.getZoomLevels().current,
                                  $('#saved-map-name-dialog-save-to').val());
+            checkDownloadLimit();
+            $('#save-map-buttons').show();
+        }, this));
+
+        $('#saved-map-name-dialog-cancel-btn').on('tap', $.proxy(function(event){
+            event.stopImmediatePropagation();
+            $('#save-map-name-dialog').popup('close');
         }, this));
     };
 
@@ -329,7 +355,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
             utils.inform("You will need a decent network connection to use this functionality.");
         }
 
-        $('#save-map-buttons-ok').click(function(){
+        $('#save-map-buttons-ok').on("tap", function(){
             $('#cache-controls').show();
             $('#save-map-buttons').hide();
         });
@@ -343,16 +369,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
 
         $('#cache-save-details-zoom-level-but').val('1');
 
-        if(cache.getSavedMapsCount() < MAX_NO_OF_SAVED_MAPS){
-            $('#save-map-buttons-ok').removeClass('ui-disabled');
-        }
-        else{
-            $('#save-map-buttons-ok').addClass('ui-disabled');
-
-            setTimeout(function(){
-                utils.inform('You have reached the maximum number of saved maps.');
-            }, 1000);
-        }
+        checkDownloadLimit();
 
         // attach map to save-map-map div
         ui.mapPage('save-map-map');

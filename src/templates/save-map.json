@@ -22,7 +22,8 @@
             "data":{
                 "title": "Saved Map Name",
                 "text": "Enter map name",
-                "save": "Save"
+                "save": "Save",
+                "cancel": "Cancel"
             }
         }
     }
