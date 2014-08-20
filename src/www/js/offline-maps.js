@@ -401,11 +401,16 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         }
     }
 
+    /* saved-maps-page events */
     $(document).on('pagecreate', '#saved-maps-page',offlineMapsPage);
     $(document).on('_pageshow', '#saved-maps-page', function(){
         map.updateSize();
     });
+    $(document).on('pageremove', '#saved-maps-page', function(){
+        map.removeAllFeatures(savedMapsLayer);
+    });
 
+    /* save-map-page events */
     $(document).on('_pageshow', '#save-map-page', saveMapPage);
     $(document).on('popupbeforeposition', '#save-map-name-dialog', saveMapNamePage);
 
