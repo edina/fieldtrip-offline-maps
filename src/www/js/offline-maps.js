@@ -228,7 +228,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
 
         $('#saved-maps-list-popup-view').click(function(event){
             // view selected
-            $.mobile.changePage('map.html');
+            $('body').pagecontainer('change', 'map.html');
             displayOnMap();
         });
         $('#saved-maps-list-popup-delete').click($.proxy(function(event){
