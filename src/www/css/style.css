@@ -238,6 +238,6 @@
     margin: 0 0 !important;
 }
 
-#saved-maps-list-popup .ui-btn-text{
-    font-size: 16px;
+#saved-maps-list-popup .ui-first-child{
+    font-weight: bold;
 }
