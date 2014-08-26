@@ -608,13 +608,6 @@ var _fs = {
     deleteSavedMapDetails: function(mapName){
         var maps = this.getSavedMaps();
 
-        // remove file:// from cachedir fullpath
-        var path = this.cacheDir.fullPath;
-        if(path.slice(0,7) === "file://"){
-            path = path.substr(7);
-        }
-
-        var localMapDir = path + "/" + mapName + "/" ;
         var onGetDirectorySuccess = function(directory){
             var success = function (parent) {
                 webdb.deleteMap(mapName);
@@ -632,15 +625,18 @@ var _fs = {
             console.error(error.code);
         };
 
+        // remove tiles directory
         this.cacheDir.getDirectory(
-            localMapDir,
+            mapName,
             {
                 create: false,
                 exclusive: false
             },
-            onGetDirectorySuccess, onGetDirectoryFail
+            onGetDirectorySuccess,
+            onGetDirectoryFail
         );
 
+        // remove database entry
         _base.deleteSavedMapDetails(mapName);
     },
 
