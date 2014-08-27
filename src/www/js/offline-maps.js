@@ -300,14 +300,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
             map.getZoomLevels().current,
             $('#saved-map-name-dialog-save-to').val()) * cache.AV_TILE_SIZE;
 
-        var saveMap = false;
-
-        $('#save-map-name-dialog-info').html(
-            '<p>' + $('#cache-save-details-text-stats').text() + '</p>');
-
-        $('#saved-map-name-dialog-text').val(new Date().toLocaleString().substr(0, 24));
-        $('#saved-map-name-dialog-save-to').val($("#cache-slider").val());
-        $('#saved-map-name-dialog-btn').on('tap', $.proxy(function(event){
+        var doSaveMap = $.proxy(function(event){
             $('#save-map-name-dialog').popup('close');
             $('#cache-controls').hide();
             cache.saveMap($('#saved-map-name-dialog-text').val(),
@@ -315,7 +308,21 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
                                  $('#saved-map-name-dialog-save-to').val());
             checkDownloadLimit();
             $('#save-map-buttons').show();
-        }, this));
+        }, this);
+
+        $('#save-map-name-dialog-info').html(
+            '<p>' + $('#cache-save-details-text-stats').text() + '</p>');
+
+        $('#saved-map-name-dialog-text').val(new Date().toLocaleString().substr(0, 24));
+        $('#saved-map-name-dialog-save-to').val($("#cache-slider").val());
+
+
+        $('#saved-map-name-dialog-btn').on('tap', doSaveMap);
+        $(document).on('keyup', '#saved-map-name-dialog-text', function(event){
+            if(event.keyCode == 13){
+                doSaveMap();
+            }
+        });
 
         $('#saved-map-name-dialog-cancel-btn').on('tap', $.proxy(function(event){
             event.stopImmediatePropagation();
