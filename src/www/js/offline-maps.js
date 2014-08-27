@@ -55,6 +55,19 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     };
 
 
+    // display a saved map on main map
+    var displaySavedMap = function(mapName){
+        console.debug('Display: ' + mapName);
+        var details = cache.getSavedMapDetails(mapName);
+        if(details){
+            map.showBBox({
+                'layer': savedMapsLayer,
+                'bounds': details.bounds,
+                'poi': details.poi
+            });
+        }
+    };
+
     /**
      * Map with local storage caching.
      * @params options:
@@ -187,25 +200,21 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
             });
         }
 
-        if(count === 0){
-            $('#saved-maps-list').html('<p class="large-text">No saved maps - go to <a href="save-map.html">Download</a> to create saved maps</p>');
-        }
-        else if(count < MAX_NO_OF_SAVED_MAPS){
-            $('#saved-maps-list').append('<p class="large-text"><a href="save-map.html">Download more maps</a></p>');
-        }
-
-        // display a saved map on main map
-        var displayOnMap = function(){
-            var name = selectedSavedMap.find('h3').text();
-            var details = cache.getSavedMapDetails(name);
-            if(details){
-                map.showBBox({
-                    'layer': savedMapsLayer,
-                    'bounds': details.bounds,
-                    'poi': details.poi
-                });
+        var updateDownloadMessage = function(){
+            var count = cache.getSavedMapsCount();
+            console.debug(count);
+            var msg = '';
+            if(count === 0){
+                msg = '<p class="large-text">No saved maps - go to <a href="save-map.html">Download</a> to create saved maps</p>';
             }
+            else if(count < MAX_NO_OF_SAVED_MAPS){
+                msg = '<p class="large-text"><a href="save-map.html">Download more maps</a></p>';
+            }else{
+                msg = '<p class="large-text">You have reached the maximum number of saved maps.</p>';
+            }
+            $('#saved-maps-list-download-msg').html(msg);
         };
+        updateDownloadMessage();
 
         // context menu popup
         $('#saved-maps-list-popup').bind({
@@ -228,8 +237,9 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
 
         $('#saved-maps-list-popup-view').click(function(event){
             // view selected
+            var mapName = $('#saved-maps-list-popup-name').text();
             $('body').pagecontainer('change', 'map.html');
-            displayOnMap();
+            displaySavedMap(mapName);
         });
         $('#saved-maps-list-popup-delete').click($.proxy(function(event){
             // delete selected
@@ -248,6 +258,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
             cache.deleteSavedMapDetails(selectedSavedMap.find('h3').text());
             map.removeAllFeatures(savedMapsLayer);
             $('#saved-maps-delete-popup').popup("close");
+            updateDownloadMessage();
             $(selectedSavedMap).slideUp('slow');
         }, this));
 
@@ -257,8 +268,8 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
             'tap',
             function(event){
                 if(!taphold){
-                    selectedSavedMap = $(event.target).parents('li');
-                    displayOnMap();
+                    var mapName = $(event.target).text();
+                    displaySavedMap(mapName);
                 }
                 else{
                     // taphold has been lifted
@@ -284,12 +295,6 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         utils.touchScroll('#saved-maps-list');
 
         $('#saved-maps-list-list').listview('refresh');
-
-        // show first map on list
-        selectedSavedMap = $('#saved-maps-list li:first');
-        displayOnMap();
-
-        savedMapsLayer.setVisibility(true);
     };
 
     /**
@@ -409,9 +414,13 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     }
 
     /* saved-maps-page events */
-    $(document).on('pagecreate', '#saved-maps-page',offlineMapsPage);
+    $(document).on('pagecreate', '#saved-maps-page', offlineMapsPage);
     $(document).on('_pageshow', '#saved-maps-page', function(){
         map.updateSize();
+
+        // show first map on list
+        var mapName = $('#saved-maps-list ul>li:first h3').text();
+        displaySavedMap(mapName);
     });
     $(document).on('pageremove', '#saved-maps-page', function(){
         map.removeAllFeatures(savedMapsLayer);
