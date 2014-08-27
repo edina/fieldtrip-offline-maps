@@ -143,7 +143,7 @@ sys:{
                 sts.changePageByFile('save-map.html', '#save-map-page', function(){
                     ok(true, 'navigate to save map page');
 
-                    sts.clickAndTest({
+                    sts.tapAndTest({
                         'id': '#save-map-buttons-ok',
                         'test': function(){
                             return $('#cache-controls').is(':visible');
@@ -151,19 +151,29 @@ sys:{
                         'cb': function(success){
                             ok(success, 'Save button');
                             sts.clickAndTest({
-                                'id': '#cache-save-details-button-div a',
+                                'id': '#cache-save-details-button-div > a',
+                                'delay': 1000,
                                 'test': function(){
-                                    return $.mobile.activePage[0].id === 'save-map-name-dialog';
+                                    return $('#save-map-name-dialog').is(':visible');
                                 },
                                 'cb': function(success){
                                     ok(success, 'Map name dialog');
-                                    sts.clickAndTest({
+
+                                    var mapName = 'test_' + $('#saved-map-name-dialog-text').val();
+                                    $('#saved-map-name-dialog-text').val(mapName);
+
+                                    sts.tapAndTest({
                                         'id': '#saved-map-name-dialog-btn',
-                                        'delay': 2500,
+                                        'delay': 1000,
                                         'poll': 1000,
                                         'test': function(){
-                                            // test has passed when map count has been incremented
-                                            return (mapCount + 1)  === cache.getSavedMapsCount();
+                                            //Check that the map was saved
+                                            for(var key in cache.getSavedMaps()){
+                                                if(key === utils.santiseForFilename(mapName)){
+                                                    return true;
+                                                }
+                                            }
+                                            return false;
                                         },
                                         'cb': function(success){
                                             ok(success, 'Save Map');
