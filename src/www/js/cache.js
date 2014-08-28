@@ -665,19 +665,14 @@ var _fs = {
      */
     saveImage: function(options){
         var maxNumberOfFilesPerDir = 100;
-        var fileName = map.getStackType() + '_' + options.z +
-            '_' + options.x + '_' +  options.y + '.' + options.type;
+        var fileName = options.z + '_' + options.x + '_' +  options.y +
+            '.' + options.type;
 
         var subDirectory = Math.ceil(count / maxNumberOfFilesPerDir);
-
-        // remove file:// from cachedir fullpath
         var path = file.getFilePath(this.cacheDir);
-        //not sure if it's needed in cordova 3
-        //if(path.slice(0,7) === "file://"){
-        //    path = path.substr(7);
-        //}
 
-        var localFileName = path + "/" + options.mapName +  "/" + subDirectory + "/" + fileName;
+        var localFileName = path + "/" + options.mapName +  "/" + subDirectory +
+            "/" + fileName;
         console.debug("download " + options.url);
 
         var fileTransfer = new FileTransfer();
