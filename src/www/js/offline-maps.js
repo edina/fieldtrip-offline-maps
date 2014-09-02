@@ -433,7 +433,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 
-    $('body').pagecontainer('change', '#settings-mapserver-url', function(){
+    $(document).on('change', '#settings-mapserver-url', function(){
         map.switchBaseLayer(
             getMapWithLocalStorage(
                 $('#settings-mapserver-url option:selected').val())
