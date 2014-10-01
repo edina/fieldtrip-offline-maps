@@ -290,8 +290,6 @@ var _base = {
             delete maps[mapName];
             setSavedMap(maps);
         }
-
-        webdb.deleteMap(mapName);
     },
 
     /**
