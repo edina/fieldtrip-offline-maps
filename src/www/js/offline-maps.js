@@ -33,8 +33,8 @@ DAMAGE.
 
 /* global Connection */
 
-define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignore:line
-    ui, map, utils, cache, webdb){
+define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
+    map, utils, cache, webdb){
     var MAX_NO_OF_SAVED_MAPS = 3;
 
     /**
@@ -178,7 +178,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         var selectedSavedMap;
         var count = 0;
 
-        ui.mapPage('saved-maps-map');
+        map.display('saved-maps-map');
 
         if(maps){
             // build saved maps list
@@ -384,7 +384,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         checkDownloadLimit();
 
         // attach map to save-map-map div
-        ui.mapPage('save-map-map');
+        map.display('save-map-map');
     };
 
     /**
