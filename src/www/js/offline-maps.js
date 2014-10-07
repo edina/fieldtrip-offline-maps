@@ -330,7 +330,7 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         });
 
         $('#saved-map-name-dialog-cancel-btn').on('tap', $.proxy(function(event){
-            event.stopImmediatePropagation();
+            event.preventDefault();
             $('#save-map-name-dialog').popup('close');
         }, this));
     };
