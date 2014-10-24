@@ -443,7 +443,6 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
 
     // close save map popup
     $(document).on('vclick', '#cache-controls-close', function(){
-        //$('#cache-controls').popup('close');
         $('#cache-controls').hide();
         $('#save-map-buttons').show();
     });
