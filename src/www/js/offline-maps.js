@@ -367,9 +367,10 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
             utils.inform("You will need a decent network connection to use this functionality.");
         }
 
-        $('#save-map-buttons-ok').on("tap", function(){
+        $('#save-map-buttons-ok').on("tap", function(e){
             $('#cache-controls').show();
             $('#save-map-buttons').hide();
+            e.preventDefault();
         });
 
         // initialise slider values according to zoom level
@@ -438,6 +439,13 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
             getMapWithLocalStorage(
                 $('#settings-mapserver-url option:selected').val())
         );
+    });
+
+    // close save map popup
+    $(document).on('vclick', '#cache-controls-close', function(){
+        //$('#cache-controls').popup('close');
+        $('#cache-controls').hide();
+        $('#save-map-buttons').show();
     });
 
     map.switchBaseLayer(getMapWithLocalStorage(utils.getMapServerUrl()));

@@ -115,6 +115,12 @@
     padding: 0 1% 1.2em 1%;
 }
 
+#cache-controls-close{
+    float: left;
+    left: -1em;
+    top: -1.5em;
+}
+
 #cache-save-details-text label{
     float: left;
     padding-top: 1em;
