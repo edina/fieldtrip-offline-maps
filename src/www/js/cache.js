@@ -673,9 +673,7 @@ var _fs = {
             "/" + fileName;
         console.debug("download " + options.url);
 
-        var fileTransfer = new FileTransfer();
-
-        fileTransfer.download(
+        file.ftDownload(
             options.url + utils.getLoggingParams(true),
             localFileName,
             function(entry){
