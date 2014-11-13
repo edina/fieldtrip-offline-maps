@@ -33,9 +33,11 @@ DAMAGE.
 
 /* global Connection */
 
-define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
-    map, utils, cache, webdb){
+define(['map', 'utils', './cache', './database', 'file'], function(// jshint ignore:line
+    map, utils, cache, webdb, file){
     var MAX_NO_OF_SAVED_MAPS = 3;
+    var LOCAL_STORAGE_NATIVE_URL;
+    file.getPersistentRoot(function(fs){ LOCAL_STORAGE_NATIVE_URL = fs.nativeURL + cache.MAP_CACHE_DIR + '/';});
 
     /**
      * Enable or disable que download button if the limit of saved maps
@@ -97,6 +99,7 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
      */
     var FGBMapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
         initialize: function(options) {
+            
             var baseLayer = map.getBaseLayer();
             this.serviceVersion = baseLayer.serviceVersion;
             this.layername = baseLayer.layername;
@@ -106,7 +109,6 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
             // or getURL. Using getURLasync was causing the application to freeze,
             // often getting a ANR
             this.async = typeof(webdb) !== 'undefined';
-
             this.isBaseLayer = true;
             OpenLayers.Layer.TMS.prototype.initialize.apply(
                 this,
@@ -116,7 +118,8 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         getURLasync: function(bounds, callback, scope) {
             var url = OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
             var data = url.match(/\/(\d+)/g).join("").split("/");
-            webdb.getCachedTilePath( callback, scope, data[2], data[3] , data[1], url);
+            var tile = {x:data[2], y:data[3] , z:data[1]};
+            webdb.getCachedTilePath( callback, scope, tile, url, LOCAL_STORAGE_NATIVE_URL);
         },
         getURL: function(bounds) {
             return OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
@@ -159,7 +162,7 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         getURLasync: function(bounds, callback, scope) {
             var url = OpenLayers.Layer.OSM.prototype.getURL.apply(this, [bounds]);
             var urlData = OpenLayers.Layer.XYZ.prototype.getXYZ.apply(this, [bounds]);
-            webdb.getCachedTilePath( callback, scope, urlData.x, urlData.y , urlData.z, url);
+            webdb.getCachedTilePath( callback, scope, urlData, url, LOCAL_STORAGE_NATIVE_URL);
         }
     });
 
