@@ -50,7 +50,13 @@ define(function(){
     var webdb = {
         open: function() {
             var dbSize = 10 * 1024 * 1024; // 10MB
-            var databaseOpened = openDatabase("webDbCache", "1.0", "Cached Tiles", dbSize);
+            var databaseOpened;
+            if(window.sqlitePlugin) {
+                window.sqlitePlugin.openDatabase("webDbCache", "1.0", "Cached Tiles", dbSize);
+            } else {
+
+                databaseOpened = openDatabase("webDbCache", "1.0", "Cached Tiles", dbSize);
+            }
             return databaseOpened;
         },
 
