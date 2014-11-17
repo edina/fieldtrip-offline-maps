@@ -52,10 +52,11 @@ define(function(){
             var dbSize = 10 * 1024 * 1024; // 10MB
             var databaseOpened;
             if(window.sqlitePlugin) {
-                window.sqlitePlugin.openDatabase("webDbCache", "1.0", "Cached Tiles", dbSize);
+                databaseOpened = window.sqlitePlugin.openDatabase("webDb", "1.0", "Cached Tiles", dbSize);
             } else {
-
-                databaseOpened = openDatabase("webDbCache", "1.0", "Cached Tiles", dbSize);
+                if(typeof(openDatabase) !== 'undefined'){
+                    databaseOpened = openDatabase("webDbCache", "1.0", "Cached Tiles", dbSize);
+                }
             }
             return databaseOpened;
         },
@@ -153,10 +154,8 @@ define(function(){
 
     };
 
-    if(typeof(openDatabase) !== 'undefined'){
-        if(!db){
-            db = webdb.open();
-        }
+    if(!db){
+        db = webdb.open();
     }
 
     return webdb;
