@@ -192,7 +192,7 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
     var resetButtonsToHiddenState = function(){
 
         $('#saved-maps-list-list .ui-block-b, #saved-maps-list-list .ui-block-c' ).hide();
-    }
+    };
 
     /**
      * Show saved maps screen.
@@ -273,7 +273,6 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
         }, this));
 
         // click on a saved map
-        var taphold = false;
         $('.saved-map-click').on(
             'tap',
             function(event){
