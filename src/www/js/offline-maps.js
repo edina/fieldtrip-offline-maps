@@ -33,8 +33,8 @@ DAMAGE.
 
 /* global Connection */
 
-define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignore:line
-    ui, map, utils, cache, webdb){
+define(['ui','map', 'utils', './cache', './database', 'file'], function(// jshint ignore:line
+    ui, map, utils, cache, webdb, file){
     var MAX_NO_OF_SAVED_MAPS = 3;
 
     /**
@@ -170,6 +170,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         visible:false
     });
 
+    var resetButtonsToHiddenState = function(){
+
+        $('#saved-maps-list-list .ui-block-b, #saved-maps-list-list .ui-block-c' ).hide();
+    };
+
     /**
      * Show saved maps screen.
      */
@@ -185,16 +190,18 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
             $.each(maps, function(index, value){
                 /*jshint multistr: true */
                 $('#saved-maps-list-list').append(
-                    '<li><fieldset class="ui-grid-b"> \
-                       <div class="ui-block-a">\
-                         <a href="#" class="saved-map-click">\
-                         <h3>' + index + '</h3></a>\
-                       </div>\
-                       <div class="ui-block-b">\
-                       </div>\
-                       <div class="ui-block-c">\
-                       </div>\
-                       </fieldset>\
+                     '<li><fieldset class="ui-grid-b"> \
+                     <div class="ui-block-a">\
+                     <a href="#" class="saved-map-click">\
+                     <h3>' + index + '</h3></a>\
+                     </div>\
+                     <div class="ui-block-b">\
+                     <a href="#" class="saved-map-delete" data-role="button" data-icon="delete" data-iconpos="notext" data-theme="a"></a>\
+                     </div>\
+                     <div class="ui-block-c">\
+                     <a href="#" class="saved-map-view" data-role="button" data-icon="arrow-r" data-iconpos="notext" data-theme="a"></a>\
+                     </div>\
+                     </fieldset>\
                      </li>').trigger('create');
                 ++count;
             });
@@ -216,43 +223,27 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         };
         updateDownloadMessage();
 
-        // context menu popup
-        $('#saved-maps-list-popup').bind({
-            // populate popup with map name
-            popupafteropen: $.proxy(function(event, ui) {
-                selectedSavedMap.toBeDeleted = false;
-                $('#saved-maps-list-popup [data-role="divider"]').text(
-                    selectedSavedMap.find('h3').text());
-            }, this),
-            popupafterclose: $.proxy(function() {
-                if(selectedSavedMap.toBeDeleted){
-                    // this hack is in the documentation for chaining popups:
-                    // http://jquerymobile.com/demos/1.2.0/docs/pages/popup/index.html
-                    setTimeout( function(){
-                        $('#saved-maps-delete-popup').popup('open');
-                    }, 100);
-                }
-            }, this)
-        });
 
         $('#saved-maps-list-popup-view').click(function(event){
             // view selected
+
             var mapName = $('#saved-maps-list-popup-name').text();
-            $('body').pagecontainer('change', 'map.html');
+
             displaySavedMap(mapName);
         });
-        $('#saved-maps-list-popup-delete').click($.proxy(function(event){
-            // delete selected
-            selectedSavedMap.toBeDeleted = true;
-            $('#saved-maps-list-popup').popup('close');
-        }, this));
-        $('#saved-maps-delete-popup').bind({
-            // populate delete dialog with map name
-            popupafteropen: $.proxy(function(event, ui) {
-                $('#saved-maps-delete-popup-name').text(
-                    selectedSavedMap.find('h3').text());
-            }, this)
+
+        $('.saved-map-delete').click(function(event){
+            var mapName = selectedSavedMap.find('h3').text();
+            $('#saved-maps-delete-popup-name').text(mapName);
+            $('#saved-maps-delete-popup').popup('open');
+
         });
+
+        $('.saved-map-view').click(function(event){
+            $('body').pagecontainer('change', 'map.html');
+        });
+
+
         $('#saved-maps-delete-popup-confirm').click($.proxy(function(event){
             // confirm map delete
             cache.deleteSavedMapDetails(selectedSavedMap.find('h3').text());
@@ -267,34 +258,32 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         $('.saved-map-click').on(
             'tap',
             function(event){
-                if(!taphold){
-                    var mapName = $(event.target).text();
-                    displaySavedMap(mapName);
-                }
-                else{
-                    // taphold has been lifted
-                    taphold = false;
-
-                    // prevent popup dialog closing
-                    event.preventDefault();
-                }
-            }
-        );
-
-        // press and hold on a saved map
-        $('.saved-map-click').on(
-            'taphold',
-            function(event){
                 selectedSavedMap = $(event.target).parents('li');
-                $('#saved-maps-list-popup').popup('open', {positionTo: 'origin'});
-                taphold = true;
+                resetButtonsToHiddenState();
+
+                //show buttons
+                var uiBlockA = $(event.target).parent().parent();
+                // contains delete button
+                var uiBlockB = uiBlockA.next();
+                uiBlockB.show();
+                // contains the view map button
+                var uiBlockC = uiBlockB.next();
+                uiBlockC.show();
+
+
+                var mapName = $(event.target).text();
+                displaySavedMap(mapName);
             }
         );
+
+
 
         // make map list scrollable on touch screens
         utils.touchScroll('#saved-maps-list');
 
         $('#saved-maps-list-list').listview('refresh');
+
+
     };
 
     /**
@@ -330,7 +319,7 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
         });
 
         $('#saved-map-name-dialog-cancel-btn').on('tap', $.proxy(function(event){
-            event.stopImmediatePropagation();
+            event.preventDefault();
             $('#save-map-name-dialog').popup('close');
         }, this));
     };
@@ -418,9 +407,11 @@ define(['ui', 'map', 'utils', './cache', './database'], function(// jshint ignor
     $(document).on('_pageshow', '#saved-maps-page', function(){
         map.updateSize();
 
+        resetButtonsToHiddenState();
         // show first map on list
         var mapName = $('#saved-maps-list ul>li:first h3').text();
         displaySavedMap(mapName);
+
     });
     $(document).on('pageremove', '#saved-maps-page', function(){
         map.removeAllFeatures(savedMapsLayer);
