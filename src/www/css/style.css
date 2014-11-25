@@ -1,5 +1,11 @@
 /********* offline maps *********/
 
+.ui-header .map-download{
+    background-image: url("images/download.png");
+    background-size: 26px 26px;
+    background-position: 5px 5px;
+}
+
 #saved-maps-list{
     position: relative;
     max-height: 38%;
