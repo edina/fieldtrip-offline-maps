@@ -31,7 +31,7 @@ DAMAGE.
 
 "use strict";
 
-define(function(){
+define(['utils'], function(utils){
 
     var db;
 
@@ -64,7 +64,7 @@ define(function(){
         createTablesIfRequired: function() {
                 console.log("Creating DataBase Tables");
 
-                db.transaction(function(tx) {
+            db.transaction(function(tx) {
                     tx.executeSql("CREATE TABLE IF NOT EXISTS " +
                                   "tiles(zoom_level INTEGER, tile_column INTEGER, tile_row INTEGER, tile_data TEXT, mapName TEXT)", [], onSuccess,
                                   onError);
@@ -154,11 +154,15 @@ define(function(){
 
     };
 
-    if(!db){
-        db = webdb.open();
+    if(utils.isMobileDevice()){
+        if(!db){
+            db = webdb.open();
+        }
+    }
+    else{
+        webdb = undefined;
     }
 
     return webdb;
-
 });
 

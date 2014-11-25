@@ -37,9 +37,10 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
     map, utils, cache, webdb, file){
     var MAX_NO_OF_SAVED_MAPS = 3;
     var LOCAL_STORAGE_NATIVE_URL;
-    file.getPersistentRoot(function(fs){ LOCAL_STORAGE_NATIVE_URL = fs.nativeURL + cache.MAP_CACHE_DIR + '/';});
 
-
+    if(utils.isMobileDevice()){
+        file.getPersistentRoot(function(fs){ LOCAL_STORAGE_NATIVE_URL = fs.nativeURL + cache.MAP_CACHE_DIR + '/';});
+    }
 
     /**
      * Sets up packaged map meta data from config file if present.
@@ -51,7 +52,7 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
         if(savedMapsMeta){
             localStorage.setItem('saved-maps-v2', savedMapsMeta);
         }
-    }
+    };
 
 
 
@@ -115,7 +116,7 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
      */
     var FGBMapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
         initialize: function(options) {
-            
+
             var baseLayer = map.getBaseLayer();
             this.serviceVersion = baseLayer.serviceVersion;
             this.layername = baseLayer.layername;
