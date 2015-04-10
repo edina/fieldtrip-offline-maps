@@ -33,9 +33,28 @@ DAMAGE.
 
 /* global Connection */
 
-define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
-    map, utils, cache, webdb){
+define(['map', 'utils', './cache', './database', 'file'], function(// jshint ignore:line
+    map, utils, cache, webdb, file){
     var MAX_NO_OF_SAVED_MAPS = 3;
+    var LOCAL_STORAGE_NATIVE_URL;
+
+    if(utils.isMobileDevice()){
+        file.getPersistentRoot(function(fs){ LOCAL_STORAGE_NATIVE_URL = fs.nativeURL + cache.MAP_CACHE_DIR + '/';});
+    }
+
+    /**
+     * Sets up packaged map meta data from config file if present.
+     */
+
+    var setupPackageMapsMetadata = function(){
+        var config = utils.getConfig();
+        var savedMapsMeta = config.offlinemapmetadata;
+        if(savedMapsMeta){
+            localStorage.setItem('saved-maps-v2', savedMapsMeta);
+        }
+    };
+
+
 
     /**
      * Enable or disable que download button if the limit of saved maps
@@ -97,6 +116,7 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
      */
     var FGBMapWithLocalStorage = OpenLayers.Class(OpenLayers.Layer.TMS, {
         initialize: function(options) {
+
             var baseLayer = map.getBaseLayer();
             this.serviceVersion = baseLayer.serviceVersion;
             this.layername = baseLayer.layername;
@@ -106,7 +126,6 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
             // or getURL. Using getURLasync was causing the application to freeze,
             // often getting a ANR
             this.async = typeof(webdb) !== 'undefined';
-
             this.isBaseLayer = true;
             OpenLayers.Layer.TMS.prototype.initialize.apply(
                 this,
@@ -116,7 +135,8 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         getURLasync: function(bounds, callback, scope) {
             var url = OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
             var data = url.match(/\/(\d+)/g).join("").split("/");
-            webdb.getCachedTilePath( callback, scope, data[2], data[3] , data[1], url);
+            var tile = {x:data[2], y:data[3] , z:data[1]};
+            webdb.getCachedTilePath( callback, scope, tile, url, LOCAL_STORAGE_NATIVE_URL);
         },
         getURL: function(bounds) {
             return OpenLayers.Layer.TMS.prototype.getURL.apply(this, [bounds]);
@@ -159,7 +179,7 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         getURLasync: function(bounds, callback, scope) {
             var url = OpenLayers.Layer.OSM.prototype.getURL.apply(this, [bounds]);
             var urlData = OpenLayers.Layer.XYZ.prototype.getXYZ.apply(this, [bounds]);
-            webdb.getCachedTilePath( callback, scope, urlData.x, urlData.y , urlData.z, url);
+            webdb.getCachedTilePath( callback, scope, urlData, url, LOCAL_STORAGE_NATIVE_URL);
         }
     });
 
@@ -169,6 +189,11 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         style:{colour: 'red'},
         visible:false
     });
+
+    var resetButtonsToHiddenState = function(){
+
+        $('#saved-maps-list-list .ui-block-b, #saved-maps-list-list .ui-block-c' ).hide();
+    };
 
     /**
      * Show saved maps screen.
@@ -185,16 +210,18 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
             $.each(maps, function(index, value){
                 /*jshint multistr: true */
                 $('#saved-maps-list-list').append(
-                    '<li><fieldset class="ui-grid-b"> \
-                       <div class="ui-block-a">\
-                         <a href="#" class="saved-map-click">\
-                         <h3>' + index + '</h3></a>\
-                       </div>\
-                       <div class="ui-block-b">\
-                       </div>\
-                       <div class="ui-block-c">\
-                       </div>\
-                       </fieldset>\
+                     '<li><fieldset class="ui-grid-b"> \
+                     <div class="ui-block-a">\
+                     <a href="#" class="saved-map-click">\
+                     <h3>' + index + '</h3></a>\
+                     </div>\
+                     <div class="ui-block-b">\
+                     <a href="#" class="saved-map-delete" data-role="button" data-icon="delete" data-iconpos="notext" data-theme="a"></a>\
+                     </div>\
+                     <div class="ui-block-c">\
+                     <a href="#" class="saved-map-view" data-role="button" data-icon="arrow-r" data-iconpos="notext" data-theme="a"></a>\
+                     </div>\
+                     </fieldset>\
                      </li>').trigger('create');
                 ++count;
             });
@@ -216,43 +243,27 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         };
         updateDownloadMessage();
 
-        // context menu popup
-        $('#saved-maps-list-popup').bind({
-            // populate popup with map name
-            popupafteropen: $.proxy(function(event, ui) {
-                selectedSavedMap.toBeDeleted = false;
-                $('#saved-maps-list-popup [data-role="divider"]').text(
-                    selectedSavedMap.find('h3').text());
-            }, this),
-            popupafterclose: $.proxy(function() {
-                if(selectedSavedMap.toBeDeleted){
-                    // this hack is in the documentation for chaining popups:
-                    // http://jquerymobile.com/demos/1.2.0/docs/pages/popup/index.html
-                    setTimeout( function(){
-                        $('#saved-maps-delete-popup').popup('open');
-                    }, 100);
-                }
-            }, this)
-        });
 
         $('#saved-maps-list-popup-view').click(function(event){
             // view selected
+
             var mapName = $('#saved-maps-list-popup-name').text();
-            $('body').pagecontainer('change', 'map.html');
+
             displaySavedMap(mapName);
         });
-        $('#saved-maps-list-popup-delete').click($.proxy(function(event){
-            // delete selected
-            selectedSavedMap.toBeDeleted = true;
-            $('#saved-maps-list-popup').popup('close');
-        }, this));
-        $('#saved-maps-delete-popup').bind({
-            // populate delete dialog with map name
-            popupafteropen: $.proxy(function(event, ui) {
-                $('#saved-maps-delete-popup-name').text(
-                    selectedSavedMap.find('h3').text());
-            }, this)
+
+        $('.saved-map-delete').click(function(event){
+            var mapName = selectedSavedMap.find('h3').text();
+            $('#saved-maps-delete-popup-name').text(mapName);
+            $('#saved-maps-delete-popup').popup('open');
+
         });
+
+        $('.saved-map-view').click(function(event){
+            $('body').pagecontainer('change', 'map.html');
+        });
+
+
         $('#saved-maps-delete-popup-confirm').click($.proxy(function(event){
             // confirm map delete
             cache.deleteSavedMapDetails(selectedSavedMap.find('h3').text());
@@ -263,38 +274,35 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         }, this));
 
         // click on a saved map
-        var taphold = false;
         $('.saved-map-click').on(
             'tap',
             function(event){
-                if(!taphold){
-                    var mapName = $(event.target).text();
-                    displaySavedMap(mapName);
-                }
-                else{
-                    // taphold has been lifted
-                    taphold = false;
-
-                    // prevent popup dialog closing
-                    event.preventDefault();
-                }
-            }
-        );
-
-        // press and hold on a saved map
-        $('.saved-map-click').on(
-            'taphold',
-            function(event){
                 selectedSavedMap = $(event.target).parents('li');
-                $('#saved-maps-list-popup').popup('open', {positionTo: 'origin'});
-                taphold = true;
+                resetButtonsToHiddenState();
+
+                //show buttons
+                var uiBlockA = $(event.target).parent().parent();
+                // contains delete button
+                var uiBlockB = uiBlockA.next();
+                uiBlockB.show();
+                // contains the view map button
+                var uiBlockC = uiBlockB.next();
+                uiBlockC.show();
+
+
+                var mapName = $(event.target).text();
+                displaySavedMap(mapName);
             }
         );
+
+
 
         // make map list scrollable on touch screens
         utils.touchScroll('#saved-maps-list');
 
         $('#saved-maps-list-list').listview('refresh');
+
+
     };
 
     /**
@@ -419,9 +427,11 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
     $(document).on('_pageshow', '#saved-maps-page', function(){
         map.updateSize();
 
+        resetButtonsToHiddenState();
         // show first map on list
         var mapName = $('#saved-maps-list ul>li:first h3').text();
         displaySavedMap(mapName);
+
     });
     $(document).on('pageremove', '#saved-maps-page', function(){
         map.removeAllFeatures(savedMapsLayer);
@@ -446,6 +456,9 @@ define(['map', 'utils', './cache', './database'], function(// jshint ignore:line
         $('#cache-controls').hide();
         $('#save-map-buttons').show();
     });
+
+    setupPackageMapsMetadata();
+
 
     map.switchBaseLayer(getMapWithLocalStorage(utils.getMapServerUrl()));
 });

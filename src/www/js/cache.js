@@ -33,10 +33,10 @@ DAMAGE.
 
 /* global Image, webdb */
 
-define(['map', 'file', 'utils'], function(map, file, utils){
+define(['map', 'file', 'utils', './database' ], function(map, file, utils, webdb){
     var SAVED_MAPS = 'saved-maps-v2';
     var MAX_CACHE = 52428800; // per download - 50 MB
-
+    
     var maxDownloadStr = utils.bytesToSize(MAX_CACHE);
     var previews = {};
     var count = 0;
@@ -555,14 +555,15 @@ var _this = {};
  * TODO
  */
 var _fs = {
-
+    MAP_CACHE_DIR: 'mapcache',
+    
     init: function(callback){
         // create directory structure for caching
         // Changed to persistent cache for iphone3G issue with temp cache
         // http://community.phonegap.com/nitobi/topics/localfilesystem_persistent_and_ios_data_storage_guidelines
         file.getPersistentRoot($.proxy(function(dir){
             dir.getDirectory(
-                "mapcache",
+                this.MAP_CACHE_DIR,
                 {create: true, exclusive: false},
                 $.proxy(function(cacheDir){
                     this.cacheDir = cacheDir;
@@ -671,6 +672,9 @@ var _fs = {
 
         var localFileName = path + "/" + options.mapName +  "/" + subDirectory +
             "/" + fileName;
+
+        var relativeToExternalDir = options.mapName +  "/" + subDirectory + "/" + fileName;
+
         console.debug("download " + options.url);
 
         file.ftDownload(
@@ -678,7 +682,7 @@ var _fs = {
             localFileName,
             function(entry){
                 downloadComplete({'url': options.url,
-                                 'tileData': localFileName,
+                                 'tileData': relativeToExternalDir,
                                  'x': options.x,
                                  'y': options.y,
                                  'z': options.z,
