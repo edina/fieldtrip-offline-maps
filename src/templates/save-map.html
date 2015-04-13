@@ -23,11 +23,19 @@
     </div>
 
     <div id="save-map-buttons" class="ui-grid-b">
-      <div class="ui-block-a"></div>
-      <div class="ui-block-b"></div>
-      <div id="save-map-buttons-ok" class="ui-block-c">
-        <a data-role="button">{{body["download-map"]}}</a>
-      </div>
+      {% if body["save-map-buttons"]|length > 0 %}
+        {% for item in body["save-map-buttons"] %}
+        {% if body["save-map-buttons"][item].keys()|length > 0 %}
+        <div {% for key, value in body["save-map-buttons"][item]["div"].iteritems() %} {{key}}="{{value}}" {% endfor %}>
+          {% if body["save-map-buttons"][item]["a"]%}
+          <a {% for key, value in body["save-map-buttons"][item]["a"].iteritems() %} {{key}}="{{value}}" {% endfor %}>
+            {{body["save-map-buttons"][item]["title"]}}
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      {% endif %}
     </div>
 
     <div id="cache-controls" style="display: none;">
