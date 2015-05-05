@@ -11,6 +11,17 @@
         }
     },
     "body": {
+        "save-map-buttons": {
+            "item1": {
+                "div": {"class": "ui-block-a", "style": "width:50%"}
+            },
+            "item2": {
+                "div": {"class": "ui-block-b", "id": "save-map-buttons-ok", "style": "width:50%"},
+                "a": {"data-role": "button"},
+                "title": "Download Map"
+            }
+        },
+        "list-download-map": "List downloaded maps",
         "download-map": "Download Map",
         "save-map": "Save Map (use offline)",
         "save": "Save",
