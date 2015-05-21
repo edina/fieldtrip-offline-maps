@@ -1,6 +1,6 @@
 {
   "name": "fieldtrip-offline-maps",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A fieldtrip plugin for caching base maps",
   "main": "src/www/js/sync.js",
   "scripts": {
