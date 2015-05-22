@@ -1,0 +1,10 @@
+{
+    "popups": {
+        "cached":{
+            "template": "preview-map-cached-popup.html",
+            "data":{
+                "view": "List of cached maps"
+            }
+        }
+    }
+}
