@@ -124,6 +124,48 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
     };
 
     /**
+     * check for cached areas and zoom to them
+     */
+    var gotToCachedAreas = function(){
+        console.log('gps time out event got fired');
+        var maps = cache.getSavedMaps();
+        var count = 0;
+        if(maps && $.mobile.activePage.attr('id') === 'annotate-preview-page'){
+            if(Object.keys(maps).length === 1){
+                $.each(maps, function(index, value){
+                    zoomToSavedMap(index);
+                });
+            }
+            else {
+                // build saved maps list
+                $('#preview-saved-maps-list-list').html('');
+                $.each(maps, function(index, value){
+                    /*jshint multistr: true */
+                    $('#preview-saved-maps-list-list').append(
+                         '<li><fieldset class="ui-grid-solo"> \
+                         <div class="ui-block-a">\
+                         <a href="#" class="cached-map-click">\
+                         <h3>' + index + '</h3></a>\
+                         </div>\
+                         </fieldset>\
+                         </li>').trigger('create');
+                    count++;
+                });
+                $('#preview-map-cached-popup').popup('open');
+                // click on a saved map
+                $('.cached-map-click').off('tap');
+                $('.cached-map-click').on(
+                    'tap',
+                    function(event){
+                        var mapName = $(event.target).text();
+                        zoomToSavedMap(mapName);
+                    }
+                );
+            }
+        }
+    };
+
+    /**
      * FGB Map with local storage caching.
      * @params options:
      *   url - TMS URL
@@ -469,46 +511,7 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
         $('#save-map-buttons').show();
     });
 
-    $(document).on(map.EVT_GPS_TIMEOUT, function(){
-        console.log('gps time out event got fired');
-        var maps = cache.getSavedMaps();
-        var count = 0;
-        if(maps){
-            if(Object.keys(maps).length === 1){
-                $.each(maps, function(index, value){
-                    zoomToSavedMap(index);
-                });
-            }
-            else {
-                // build saved maps list
-                $('#preview-saved-maps-list-list').html();
-                $.each(maps, function(index, value){
-                    /*jshint multistr: true */
-                    $('#preview-saved-maps-list-list').append(
-                         '<li><fieldset class="ui-grid-solo"> \
-                         <div class="ui-block-a">\
-                         <a href="#" class="cached-map-click">\
-                         <h3>' + index + '</h3></a>\
-                         </div>\
-                         </fieldset>\
-                         </li>').trigger('create');
-                    count++;
-                });
-                $('#preview-map-cached-popup').popup('open');
-                // click on a saved map
-                $('.cached-map-click').off('tap');
-                $('.cached-map-click').on(
-                    'tap',
-                    function(event){
-            
-                        var mapName = $(event.target).text();
-                        zoomToSavedMap(mapName);
-                    }
-                );
-            }
-
-        }
-    });
+    $(document).on(map.EVT_GPS_TIMEOUT, gotToCachedAreas);
 
 
     setupPackageMapsMetadata();
