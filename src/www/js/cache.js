@@ -1,21 +1,18 @@
 /*
-Copyright (c) 2014, EDINA.
+Copyright (c) 2015, EDINA
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, this
-   list of conditions and the following disclaimer in the documentation and/or
-   other materials provided with the distribution.
-3. All advertising materials mentioning features or use of this software must
-   display the following acknowledgement: This product includes software
-   developed by the EDINA.
-4. Neither the name of the EDINA nor the names of its contributors may be used to
-   endorse or promote products derived from this software without specific prior
-   written permission.
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or
+  other materials provided with the distribution.
+* Neither the name of EDINA nor the names of its contributors may be used to
+  endorse or promote products derived from this software without specific prior
+  written permission.
 
 THIS SOFTWARE IS PROVIDED BY EDINA ''AS IS'' AND ANY EXPRESS OR IMPLIED
 WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -36,7 +33,7 @@ DAMAGE.
 define(['map', 'file', 'utils', './database' ], function(map, file, utils, webdb){
     var SAVED_MAPS = 'saved-maps-v2';
     var MAX_CACHE = 52428800; // per download - 50 MB
-    
+
     var maxDownloadStr = utils.bytesToSize(MAX_CACHE);
     var previews = {};
     var count = 0;
@@ -556,7 +553,7 @@ var _this = {};
  */
 var _fs = {
     MAP_CACHE_DIR: 'mapcache',
-    
+
     init: function(callback){
         // create directory structure for caching
         // Changed to persistent cache for iphone3G issue with temp cache
