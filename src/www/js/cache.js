@@ -32,7 +32,7 @@ DAMAGE.
 
 define(['map', 'file', 'utils', './database' ], function(map, file, utils, webdb){
     var SAVED_MAPS = 'saved-maps-v2';
-    var MAX_CACHE = 52428800; // per download - 50 MB
+    var MAX_CACHE = utils.getConfig().cachelimit || 52428800; // per download - 50 MB
 
     var maxDownloadStr = utils.bytesToSize(MAX_CACHE);
     var previews = {};
