@@ -1,0 +1,16 @@
+{
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "delete": "Eliminar",
+    "delete_map_confirmation": "Está seguro que desea eliminar este mapa",
+    "download_map": "Descargar Mapa",
+    "download_map_title": "Descargar Mapa",
+    "enter_map_name": "Ingrese el nombre del mapa",
+    "list_cached_maps": "Lista de mapas almacenados",
+    "list_downloaded_maps": "Lista de mapas descargados",
+    "save": "Guardar",
+    "save_map": "Grabar Mapa (uso fuera de línea)",
+    "saved_map_name": "Nombre del mapa almacenado",
+    "view_on_map": "Ver en el Mapa",
+    "zoom_levels": "Niveles de zoom"
+}
