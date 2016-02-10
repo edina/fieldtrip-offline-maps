@@ -28,8 +28,8 @@
         {% if body["save-map-buttons"][item].keys()|length > 0 %}
         <div {% for key, value in body["save-map-buttons"][item]["div"].iteritems() %} {{key}}="{{value}}" {% endfor %}>
           {% if body["save-map-buttons"][item]["a"]%}
-          <a {% for key, value in body["save-map-buttons"][item]["a"].iteritems() %} {{key}}="{{value}}" {% endfor %}>
-            {{body["save-map-buttons"][item]["title"]}}
+          <a {% for key, value in body["save-map-buttons"][item]["a"].iteritems() %} {{key}}="{{value}}" {% endfor %} data-i18n="{{body["save-map-buttons"][item].i18n}}">
+            {{body["save-map-buttons"][item].title}}
           </a>
           {% endif %}
         </div>
@@ -49,13 +49,17 @@
 
       <div class="ui-grid-a">
         <div id="cache-save-details-title" class="ui-block-a">
-          <h2>{{body["save-map"]}}</h2>
+          <h2 data-i18n="{{body['save-map'].i18n}}">
+            {{body["save-map"].default}}
+          </h2>
         </div>
         <div id="cache-save-details-button-div" class="ui-block-b">
-          <a data-role="button" data-rel="popup" href="#save-map-name-dialog" data-position-to="window">Save</a>
+          <a data-role="button" data-rel="popup" href="#save-map-name-dialog" data-position-to="window" data-i18n="{{body.save.i18n}}">{{body.save.default}}</a>
         </div>
         <div id="cache-save-details-text" class="ui-block-a">
-          <label for="basic">{{body["zoom"]}}</label>
+          <label for="basic" data-i18n="{{body.zoom.i18n}}">
+            {{body.zoom.default}}
+          </label>
           <input type="text" id="cache-save-details-zoom-level-but" value="1">
         </div>
         <div id="cache-save-details-text-stats" class="ui-block-b"></div>

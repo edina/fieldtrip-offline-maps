@@ -1,7 +1,12 @@
 <div id="saved-maps-delete-popup" data-role="popup">
-    <p>{{data["question"]}}
+    <p>
+      <span data-i18n="{{data.question.i18n}}">{{data.question.default}}</span>
       <span id="saved-maps-delete-popup-name"></span>?
     </p>
-    <a href="#" data-role="button" data-inline="true" data-rel="back">{{data["cancel"]}}</a>
-    <a id="saved-maps-delete-popup-confirm" href="#" data-role="button" data-inline="true">{{data["delete"]}}</a>
+    <a href="#" data-role="button" data-inline="true" data-rel="back" data-i18n="{{data.cancel.i18n}}">
+        {{data.cancel.default}}
+    </a>
+    <a id="saved-maps-delete-popup-confirm" href="#" data-role="button" data-inline="true" data-i18n="{{data.delete.i18n}}">
+        {{data.delete.default}}
+    </a>
 </div>

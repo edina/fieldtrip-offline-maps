@@ -3,17 +3,35 @@
         "delete":{
             "template": "saved-maps-delete-popup.html",
             "data":{
-                "question": "Are you sure you want to delete map",
-                "cancel": "Cancel",
-                "delete": "Delete"
+                "question": {
+                    "i18n": "offline-maps:delete_map_confirmation",
+                    "default": "Are you sure you want to delete map"
+                },
+                "cancel": {
+                    "i18n": "offline-maps:cancel",
+                    "default": "Cancel"
+                },
+                "delete": {
+                    "i18n": "offline-maps:delete",
+                    "default": "Delete"
+                }
             }
         },
         "list": {
             "template": "saved-maps-list-popup.html",
             "data":{
-                "view": "View on Map",
-                "delete": "Delete",
-                "close": "Close"
+                "view": {
+                    "i18n": "offline-maps:view_on_map",
+                    "default": "View on Map"
+                },
+                "delete": {
+                    "i18n": "offline-maps:delete",
+                    "default": "Delete"
+                },
+                "close": {
+                    "i18n": "offline-maps:close",
+                    "default": "Close"
+                }
             }
         }
     }

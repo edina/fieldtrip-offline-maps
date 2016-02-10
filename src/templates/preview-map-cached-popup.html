@@ -2,7 +2,9 @@
   <ul data-role="listview" data-inset="true" data-theme="b">
     <li id="saved-maps-list-popup-name" data-role="divider" data-theme="a"></li>
     <li>
-      <a id="saved-maps-list-popup-view" href="#">{{data["view"]}}</a>
+        <a id="saved-maps-list-popup-view" href="#" data-i18n="{{data.view.i18n}}">
+            {{data.view.default}}
+        </a>
     </li>
     <li>
       <ul id="preview-saved-maps-list-list" data-role="listview" data-split-icon="delete"></ul>

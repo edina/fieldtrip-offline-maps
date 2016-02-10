@@ -1,0 +1,16 @@
+{
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "delete_map_confirmation": "Are you sure you want to delete map",
+    "download_map": "Download Map",
+    "download_map_title": "Download Map",
+    "enter_map_name": "Enter map name",
+    "list_cached_maps": "List of cached maps",
+    "list_downloaded_maps": "List downloaded maps",
+    "save": "Save",
+    "save_map": "Save Map (use offline)",
+    "saved_map_name": "Saved Map Name",
+    "view_on_map": "View on Map",
+    "zoom_levels": "Zoom Levels"
+}

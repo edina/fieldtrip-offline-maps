@@ -3,7 +3,10 @@
         "cached":{
             "template": "preview-map-cached-popup.html",
             "data":{
-                "view": "List of cached maps"
+                "view": {
+                    "i18n": "offline-maps:list_cached_maps",
+                    "default": "List of cached maps"
+                }
             }
         }
     }

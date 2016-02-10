@@ -18,23 +18,51 @@
             "item2": {
                 "div": {"class": "ui-block-b", "id": "save-map-buttons-ok", "style": "width:50%"},
                 "a": {"data-role": "button"},
-                "title": "Download Map"
+                "title": "Download Map",
+                "i18n": "offline-maps:download_map_title"
             }
         },
-        "list-download-map": "List downloaded maps",
-        "download-map": "Download Map",
-        "save-map": "Save Map (use offline)",
-        "save": "Save",
-        "zoom": "Zoom Levels"
+        "list-download-map": {
+            "i18n": "offline-maps:list_downloaded_maps",
+            "default": "List downloaded maps"
+        },
+        "download-map": {
+            "i18n": "offline-maps:download_map",
+            "default": "Download Map"
+        },
+        "save-map": {
+            "i18n": "offline-maps:save_map",
+            "default": "Save Map (use offline)"
+        },
+        "save": {
+            "i18n": "offline-maps:save",
+            "default": "Save"
+        },
+        "zoom": {
+            "i18n": "offline-maps:zoom_levels",
+            "default": "Zoom Levels"
+        }
     },
     "popups": {
         "save":{
             "template": "save-map-name-popup.html",
             "data":{
-                "title": "Saved Map Name",
-                "text": "Enter map name",
-                "save": "Save",
-                "cancel": "Cancel"
+                "title": {
+                    "i18n": "offline-maps:saved_map_name",
+                    "default": "Saved Map Name"
+                },
+                "text": {
+                    "i18n": "offline-maps:enter_map_name",
+                    "default": "Enter map name"
+                },
+                "save": {
+                    "i18n": "offline-maps:save",
+                    "default": "Save"
+                },
+                "cancel": {
+                    "i18n": "offline-maps:cancel",
+                    "default": "Cancel"
+                }
             }
         }
     }
