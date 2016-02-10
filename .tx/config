@@ -1,0 +1,9 @@
+[main]
+host = https://www.transifex.com
+
+[fieldtrip-offline-maps.offline-maps]
+file_filter = src/locales/<lang>/offline-maps.json
+source_file = src/locales/en/offline-maps.json
+source_lang = en
+type = KEYVALUEJSON
+
