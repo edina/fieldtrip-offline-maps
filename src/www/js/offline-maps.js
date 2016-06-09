@@ -492,6 +492,12 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
     $(document).on('_pageshow', '#save-map-page', saveMapPage);
     $(document).on('popupbeforeposition', '#save-map-name-dialog', saveMapNamePage);
 
+    $(document).on('pagehide', '#save-map-page', function(){
+        map.init();
+        map.switchBaseLayer(getMapWithLocalStorage(utils.getMapServerUrl()));
+    });
+
+
     // adding stylesheet to beginning of head
     $('head').prepend('<link rel="stylesheet" href="plugins/offline-maps/css/style.css" type="text/css" />');
 
