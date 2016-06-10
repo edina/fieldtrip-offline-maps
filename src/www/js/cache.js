@@ -157,9 +157,18 @@ define(['map', 'file', 'utils', './database' ], function(map, file, utils, webdb
             var showMapPreview = function(options){
                 var pMap;
                 if(typeof(previews[options.name]) === 'undefined'){
+                    var mapOptions = map.getOptions();
                     pMap = new OpenLayers.Map(
                         options.div,
-                        map.getOptions()
+                        {
+                            controls: [],
+                            projection: mapOptions.projection,
+                            displayProjection: mapOptions.displayProjection,
+                            units: 'm',
+                            resolutions: mapOptions.resolutions,
+                            maxExtent: mapOptions.maxExtent,
+                            theme: null,
+                        }
                     );
 
                     var layer, baseLaser = map.getBaseLayer();
