@@ -211,9 +211,9 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
             this.type = 'png';
             if (options.url === "undefined/${z}/${x}/${y}.png") {
                 this.url = [
-                    'http://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                    'http://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                    'http://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
+                    'https://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                    'https://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
+                    'https://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
                 ];
             }
             else{
