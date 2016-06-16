@@ -173,7 +173,10 @@ define(['map', 'file', 'utils', './database' ], function(map, file, utils, webdb
 
                     var layer, baseLaser = map.getBaseLayer();
                     if(baseLaser instanceof OpenLayers.Layer.OSM){
-                        layer = new OpenLayers.Layer.OSM();
+                        layer = new OpenLayers.Layer.OSM(
+                            baseLaser.name + '_' + options.zoom,
+                            baseLaser.url
+                        );
                     }else{
                         layer = new OpenLayers.Layer.TMS(
                         "os",
