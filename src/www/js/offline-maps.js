@@ -39,19 +39,6 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
         file.getPersistentRoot(function(fs){ LOCAL_STORAGE_NATIVE_URL = fs.nativeURL + cache.MAP_CACHE_DIR + '/';});
     }
 
-    /**
-     * Sets up packaged map meta data from config file if present.
-     */
-
-    var setupPackageMapsMetadata = function(){
-        var config = utils.getConfig();
-        var savedMapsMeta = config.offlinemapmetadata;
-        if(savedMapsMeta){
-            localStorage.setItem('saved-maps-v2', savedMapsMeta);
-        }
-    };
-
-
 
     /**
      * Enable or disable que download button if the limit of saved maps
@@ -512,10 +499,6 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
     });
 
     $(document).on(map.EVT_GPS_TIMEOUT, gotToCachedAreas);
-
-
-    setupPackageMapsMetadata();
-
 
     map.switchBaseLayer(getMapWithLocalStorage(utils.getMapServerUrl()));
 });
