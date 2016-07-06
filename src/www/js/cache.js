@@ -51,7 +51,7 @@ define(['map', 'file', 'utils', './database' ], function(map, file, utils, webdb
 
         var percent = ((count / noOfTiles) * 100).toFixed(0);
 
-        utils.inform(percent  + '%');
+        //utils.inform(percent  + '%');
         if(count === noOfTiles){
             $.mobile.loading('hide');
         }
@@ -451,8 +451,13 @@ var _base = {
      * @param name Saved map name.
      * @param min Start zoom level to cache.
      * @param max End zoom level to cache.
+     * @param cMap map to use in caching. If undefined main app map will be used.
      */
-    saveMap: function(mapName, min, max){
+    saveMap: function(mapName, min, max, cMap){
+        if(cMap === undefined){
+            cMap = map;
+        }
+
         mapName = utils.santiseForFilename(mapName);
         var success = true;
 
@@ -465,9 +470,9 @@ var _base = {
 
             if(details === undefined){
                 count = 0;
-                var layer = map.getBaseLayer();
+                var layer = cMap.getBaseLayer();
 
-                var bounds = map.getExtent();
+                var bounds = cMap.getExtent();
                 noOfTiles = this.totalNumberOfTilesToDownload(min, max);
 
                 utils.inform("Saving ...");
@@ -475,8 +480,8 @@ var _base = {
                 // store cached map details
                 details = {
                     'poi': {
-                        'centre': map.getCentre(),
-                        'zoom': map.getZoom()
+                        'centre': cMap.getCentre(),
+                        'zoom': cMap.getZoom()
                     },
                     'bounds': bounds,
                     'images': []
@@ -491,7 +496,7 @@ var _base = {
                                       "txMax": calcBounds.txMax,
                                       "tyMin": calcBounds.tyMin,
                                       "tyMax": calcBounds.tyMax,
-                                      "type": map.getTileFileType()});
+                                      "type": cMap.getTileFileType()});
                 }
 
                 var downloadImageThreads = 8;
@@ -683,8 +688,6 @@ var _fs = {
             "/" + fileName;
 
         var relativeToExternalDir = options.mapName +  "/" + subDirectory + "/" + fileName;
-
-        console.debug("download " + options.url);
 
         file.ftDownload(
             options.url + utils.getLoggingParams(true),

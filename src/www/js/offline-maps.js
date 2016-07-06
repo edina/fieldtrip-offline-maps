@@ -30,8 +30,8 @@ DAMAGE.
 
 /* global Connection */
 
-define(['map', 'utils', './cache', './database', 'file'], function(// jshint ignore:line
-    map, utils, cache, webdb, file){
+define(['map', 'records', 'utils', './cache', './database', 'file'], function(// jshint ignore:line
+    map, records, utils, cache, webdb, file){
     var MAX_NO_OF_SAVED_MAPS = 3;
     var LOCAL_STORAGE_NATIVE_URL;
 
@@ -39,6 +39,63 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
         file.getPersistentRoot(function(fs){ LOCAL_STORAGE_NATIVE_URL = fs.nativeURL + cache.MAP_CACHE_DIR + '/';});
     }
 
+    /**
+     * Cache the area defined in a survey.
+     * @param e
+     * @param form The JSON form.
+     */
+    var cacheFormBBOX = function(e, form){
+        var survey = JSON.parse(form);
+        if(utils.str2bool(utils.getConfig().omautobboxcache) &&
+           survey.hasOwnProperty('bbox')){
+            var ZOOM_LEVELS = 3;
+
+            // create ol map
+            var cMap = map.createClone({
+                'div': 'hmap',
+                'zoom': map.getZoom().max
+            });
+
+            // get bbox of survey
+            var coords = survey.bbox.geometry.coordinates[0];
+            var bottomLeft = map.pointToInternal(coords[0]);
+            var topRight =  map.pointToInternal(coords[2]);
+
+            // centre on bbox
+            var bbox = new OpenLayers.Bounds(
+                bottomLeft.lon, // left
+                bottomLeft.lat, // bottom
+                topRight.lon,   // right
+                topRight.lat);  // top
+            cMap.zoomToExtent(bbox, true);
+
+            // function to ensure max cache zoom level does not exceed map max
+            var getMax = function(){
+                return Math.min(cMap.getZoom() + ZOOM_LEVELS,
+                                map.getZoomLevels().max);
+            };
+
+            var mapName = utils.santiseForFilename(survey.title);
+            var savedMap = cache.getSavedMapDetails(mapName);
+            if(savedMap){
+                // a previous map has been saved, check if bounds has changed
+                var oldBbox = savedMap.bounds;
+                var newBbox = cMap.getExtent();
+
+                if(oldBbox.left   !== newBbox.left ||
+                   oldBbox.bottom !== newBbox.bottom ||
+                   oldBbox.right  !== newBbox.right ||
+                   oldBbox.top    !== newBbox.top){
+                    console.debug("Form bbox has changed, save map");
+                    cache.deleteSavedMapDetails(mapName);
+                    cache.saveMap(survey.title, cMap.getZoom(), getMax(), cMap);
+                }
+            }
+            else{
+                cache.saveMap(survey.title, cMap.getZoom(), getMax(), cMap);
+            }
+        }
+    };
 
     /**
      * Enable or disable que download button if the limit of saved maps
@@ -499,6 +556,7 @@ define(['map', 'utils', './cache', './database', 'file'], function(// jshint ign
     });
 
     $(document).on(map.EVT_GPS_TIMEOUT, gotToCachedAreas);
+    $(document).on(records.EVT_DOWNLOAD_EDITOR, cacheFormBBOX);
 
     map.switchBaseLayer(getMapWithLocalStorage(utils.getMapServerUrl()));
 });
